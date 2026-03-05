@@ -1,0 +1,96 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Datoso",
+  "projectDescription": "Python command line tool to download, organize, and deduplicate ROM DAT files from multiple sources",
+  "theme": "aspen",
+  "primaryColor": "#4595db",
+  "lightColor": "#5ebf9e",
+  "darkColor": "#0494dc",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Core Concepts",
+        "pages": [
+          "concepts/understanding-datoso",
+          "concepts/seeds",
+          "concepts/dats-and-roms"
+        ]
+      },
+      {
+        "group": "Commands",
+        "pages": [
+          "commands/overview",
+          "commands/seed",
+          "commands/dat",
+          "commands/config",
+          "commands/doctor",
+          "commands/import",
+          "commands/deduper"
+        ]
+      },
+      {
+        "group": "Configuration",
+        "pages": [
+          "configuration/config-file",
+          "configuration/paths",
+          "configuration/rules-and-mia"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/downloading-dats",
+          "guides/processing-dats",
+          "guides/deduplication",
+          "guides/working-with-seeds"
+        ]
+      },
+      {
+        "group": "Advanced",
+        "pages": [
+          "advanced/plugin-development",
+          "advanced/troubleshooting",
+          "advanced/docker"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Download updated DATs from multiple sources (dat-omatic, redump, pleasuredome)",
+    "Process DATs to generate emulator-compatible folder structures",
+    "Deduplicate ROMs across DAT files",
+    "Plugin system with official seeds for various ROM collections",
+    "Import DATs from existing RomVault installations",
+    "Mark MIA (Missing In Action) ROMs",
+    "Configuration management with local and global settings",
+    "Doctor command to validate seed installations"
+  ],
+  "publicApiSurface": [
+    "datoso seed list",
+    "datoso seed details <seed>",
+    "datoso <seed> --fetch",
+    "datoso <seed> --process",
+    "datoso all --fetch",
+    "datoso all --process",
+    "datoso dat -d <dat_name>",
+    "datoso dat -d <seed>:<dat_name> --set <property>=<value>",
+    "datoso dat -d <seed>:<dat_name> --unset <property>",
+    "datoso config",
+    "datoso config --set <section>.<option> <value>",
+    "datoso config --get <section>.<option>",
+    "datoso config --rules-update",
+    "datoso config --mia-update",
+    "datoso doctor [seed]",
+    "datoso import",
+    "datoso deduper -input <input_dat> -p <parent_dat>",
+    "datoso log"
+  ]
+}
