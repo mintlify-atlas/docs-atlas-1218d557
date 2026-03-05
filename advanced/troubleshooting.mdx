@@ -1,0 +1,361 @@
+---
+title: 'Troubleshooting'
+description: 'Common issues, solutions, and debugging tips for Datoso'
+---
+
+## Diagnostic Tools
+
+### Doctor Command
+
+The `doctor` command is your first line of defense when troubleshooting issues:
+
+```bash
+# Check all installed seeds
+datoso doctor
+
+# Check a specific seed
+datoso doctor <seed_name>
+
+# Check with repair option (future functionality)
+datoso doctor --repair
+```
+
+The doctor command validates:
+- Seed installation and module structure
+- Required module attributes and functions
+- External executable dependencies
+- Python module imports
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Seed Not Found">
+    **Problem**: Error message `Seed <seed_name> not installed`
+
+    **Solution**:
+    ```bash
+    # Install the seed
+    pip install datoso_seed_<seed_name>
+
+    # Or install with Datoso
+    pip install datoso[<seed_name>]
+
+    # Verify installation
+    datoso seed list
+    ```
+  </Accordion>
+
+  <Accordion title="Module Attributes Missing">
+    **Problem**: Doctor reports missing `__prefix__` or `__description__`
+
+    **Solution**: Ensure your seed's `__init__.py` contains all required attributes:
+    ```python
+    __prefix__ = 'PREFIX'
+    __description__ = 'Description'
+    __version__ = '1.0.0'
+    __author__ = 'Your Name'
+    ```
+  </Accordion>
+
+  <Accordion title="Required Functions Not Found">
+    **Problem**: Doctor reports `fetch.fetch not found` or similar
+
+    **Solution**: Verify your seed implements all required modules:
+    - `fetch.py` with `fetch()` function
+    - `rules.py` with `get_rules()` function
+    - `actions.py` with `get_actions()` function
+  </Accordion>
+
+  <Accordion title="Executable Not Found">
+    **Problem**: Doctor reports external executable missing (e.g., `wget`, `curl`)
+
+    **Solution**:
+    ```bash
+    # On Ubuntu/Debian
+    sudo apt-get install wget curl
+
+    # On macOS
+    brew install wget
+
+    # Verify installation
+    which wget
+    which curl
+    ```
+  </Accordion>
+
+  <Accordion title="Captcha Warning from Datomatic">
+    **Problem**: Downloads fail or you get blocked when fetching from datomatic
+
+    <Warning>
+      Be careful when updating dats from datomatic - they sometimes use captcha protection. Repeated failures may result in temporary bans.
+    </Warning>
+
+    **Solution**:
+    - Reduce concurrent downloads in configuration
+    - Add delays between requests
+    - Use alternative sources when available
+    - Check if you've been temporarily banned and wait before retrying
+
+    Configure download settings in `datoso.ini`:
+    ```ini
+    [DOWNLOAD]
+    Workers = 5  # Reduce from default 10
+    ```
+  </Accordion>
+
+  <Accordion title="Dat Path Not Found">
+    **Problem**: Error about DatPath not existing
+
+    **Solution**:
+    ```bash
+    # Check current configuration
+    datoso config
+
+    # Set the correct path
+    datoso config --set PATHS.DatPath=~/ROMVault/DatRoot
+
+    # Create the directory if needed
+    mkdir -p ~/ROMVault/DatRoot
+    ```
+  </Accordion>
+
+  <Accordion title="Processing Errors">
+    **Problem**: Errors during `--process` operation
+
+    **Solution**:
+    1. Enable verbose logging:
+       ```bash
+       datoso <seed> --process -v
+       ```
+
+    2. Check the log file:
+       ```bash
+       datoso log
+       ```
+
+    3. Verify the DAT files were fetched correctly
+    4. Run doctor to check seed health
+  </Accordion>
+
+  <Accordion title="Import Detection Failures">
+    **Problem**: Import command fails to detect seed type
+
+    **Solution**:
+    - Ensure DAT files are in ROMVault-compatible format
+    - Check if IgnoreRegEx in configuration is too broad
+    - Verify the DAT file is not corrupted
+    - Try importing a single DAT file first to test
+  </Accordion>
+</AccordionGroup>
+
+## Logging and Debugging
+
+### Enable Logging
+
+Logging is essential for debugging issues. Configure logging in your `datoso.ini` or `~/.config/datoso/datoso.config`:
+
+```ini
+[LOG]
+# Enable logging
+Logging = true
+# Set log level (DEBUG, INFO, WARNING, ERROR)
+LogLevel = DEBUG
+# Log file location
+LogFile = datoso.log
+```
+
+Log files are stored in: `~/.config/datoso/datoso.log`
+
+### View Logs
+
+```bash
+# View the log file
+datoso log
+
+# Or directly with cat/tail
+cat ~/.config/datoso/datoso.log
+tail -f ~/.config/datoso/datoso.log  # Follow in real-time
+```
+
+### Verbosity Levels
+
+Control output verbosity with command-line flags:
+
+```bash
+# Verbose output (shows DEBUG messages)
+datoso <seed> --fetch -v
+
+# Quiet output (shows only WARNING and ERROR)
+datoso <seed> --process -q
+
+# Normal output (shows INFO and above)
+datoso <seed> --fetch
+```
+
+### Configuration Hierarchy
+
+Datoso reads configuration from multiple locations (in order of precedence):
+
+1. Current directory: `./.datosorc`
+2. XDG config directory: `~/.config/datoso/datoso.config`
+3. Home directory: `~/.datosorc`
+4. Default: `<install_path>/datoso.ini`
+
+To check which configuration is active:
+
+```bash
+# View current configuration
+datoso config
+
+# View specific option
+datoso config --get PATHS.DatPath
+
+# Check local config
+datoso config --get PATHS.DatPath --local
+
+# Check global config
+datoso config --get PATHS.DatPath --global
+```
+
+## Database Issues
+
+### Database Location
+
+The database file location can be found with:
+
+```bash
+datoso config --path
+```
+
+Default location: `~/.config/datoso/datoso.json`
+
+### Reset Database
+
+If the database becomes corrupted:
+
+```bash
+# Backup existing database
+cp ~/.config/datoso/datoso.json ~/.config/datoso/datoso.json.backup
+
+# Remove corrupted database (it will be recreated)
+rm ~/.config/datoso/datoso.json
+
+# Re-import or re-process your DATs
+datoso <seed> --fetch --process
+```
+
+## Performance Issues
+
+<AccordionGroup>
+  <Accordion title="Slow Downloads">
+    **Solutions**:
+    ```ini
+    [DOWNLOAD]
+    # Increase concurrent workers
+    Workers = 15
+    # Try different download utilities
+    PrefferDownloadUtility = aria2c  # Options: wget, urllib, curl, aria2c
+    ```
+
+    Ensure the utility is installed:
+    ```bash
+    # Install aria2c for faster downloads
+    sudo apt-get install aria2  # Ubuntu/Debian
+    brew install aria2          # macOS
+    ```
+  </Accordion>
+
+  <Accordion title="Slow Processing">
+    **Solutions**:
+    - Disable MIA processing if not needed:
+      ```ini
+      [PROCESS]
+      ProcessMissingInAction = false
+      ```
+    
+    - Use filters to process specific DATs:
+      ```bash
+      datoso <seed> --process --filter "Nintendo"
+      ```
+    
+    - Disable auto-merge if causing issues:
+      ```ini
+      [PROCESS]
+      AutoMergeEnabled = false
+      ParentMergeEnabled = false
+      ```
+  </Accordion>
+</AccordionGroup>
+
+## Error Messages Reference
+
+### Configuration Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `Dat root path not set or does not exist` | DatPath configuration missing or invalid | Set with `datoso config --set PATHS.DatPath=/path/to/dats` |
+| `Invalid config key, must be in <SECTION>.<Option> format` | Wrong config format | Use format: `SECTION.Option=value` |
+| `Config option not found in current config file` | Unknown configuration option | Check available options with `datoso config` |
+
+### Seed Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `Module Seed - <seed> not found` | Seed not installed | Install with `pip install datoso_seed_<seed>` |
+| `<attribute> not found` | Missing required module attribute | Add required attribute to seed's `__init__.py` |
+| `<executable> not found` | Missing external dependency | Install the required executable |
+
+### Processing Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `Errors fetching <seed>` | Network or source issues | Check logs with `-v`, verify internet connection |
+| `Errors processing <seed>` | DAT file or configuration issues | Enable verbose mode and check logs |
+| `Error detecting seed type` | Unknown DAT format | Verify DAT is ROMVault-compatible |
+
+## Getting Help
+
+If you're still experiencing issues:
+
+1. **Enable verbose logging and logging to file**
+   ```bash
+   datoso config --set LOG.Logging=true
+   datoso config --set LOG.LogLevel=DEBUG
+   ```
+
+2. **Run the failing command with verbose output**
+   ```bash
+   datoso <seed> --fetch -v
+   ```
+
+3. **Check the logs**
+   ```bash
+   datoso log
+   ```
+
+4. **Run doctor to validate setup**
+   ```bash
+   datoso doctor
+   ```
+
+5. **Report issues** on the GitHub repository with:
+   - Datoso version (`datoso --version`)
+   - Python version (`python --version`)
+   - Operating system
+   - Full error message and logs
+   - Steps to reproduce
+
+<Card title="Report an Issue" icon="github" href="https://github.com/laromicas/datoso/issues">
+  Create an issue on GitHub with your problem details
+</Card>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/getting-started/configuration">
+    Review configuration options
+  </Card>
+  <Card title="Plugin Development" icon="code" href="/advanced/plugin-development">
+    Learn to develop custom seeds
+  </Card>
+</CardGroup>

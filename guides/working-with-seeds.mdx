@@ -1,0 +1,465 @@
+---
+title: Working with Seeds
+description: Learn how to manage seeds, install new sources, and use multiple seeds effectively
+---
+
+Seeds are plugin packages that add support for different DAT sources in Datoso. Each seed provides the logic for fetching, parsing, and processing DATs from a specific source like Redump, No-Intro, or FBNeo.
+
+## Understanding Seeds
+
+A seed in Datoso is:
+- A Python package that extends Datoso's functionality
+- Typically named `datoso_seed_{name}` (e.g., `datoso_seed_redump`)
+- Provides source-specific logic for downloading and organizing DATs
+- Can be installed independently or all together
+
+## Listing Installed Seeds
+
+### View Installed Seeds
+
+See all currently installed seeds:
+
+```bash
+datoso seed list
+```
+
+Output example:
+```
+Installed seeds:
+* fbneo - Final Burn Neo DAT files for arcade systems
+* nointro - No-Intro DATs from datomatic
+* redump - Redump disc preservation DATs
+* pleasuredome - MAME and arcade DATs from Pleasuredome
+```
+
+### Get Seed Details
+
+View detailed information about a specific seed:
+
+```bash
+datoso seed details redump
+```
+
+Output example:
+```
+Seed redump details:
+  * Name: datoso_seed_redump
+  * Version: 0.2.5
+  * Author: Lacides Romero
+  * Description: Redump disc preservation DATs for various console systems
+```
+
+## Installing Seeds
+
+### Install All Official Seeds
+
+Install Datoso with all officially supported seeds:
+
+```bash
+pip install datoso[all]
+```
+
+This is the recommended approach for most users as it provides access to all major DAT sources.
+
+### Install Individual Seeds
+
+Install only specific seeds you need:
+
+```bash
+# Install base datoso first
+pip install datoso
+
+# Then install individual seeds
+pip install datoso[redump]
+pip install datoso[fbneo]
+pip install datoso[nointro]
+```
+
+Or install seed packages directly:
+
+```bash
+pip install datoso_seed_redump
+pip install datoso_seed_fbneo
+pip install datoso_seed_nointro
+```
+
+<Note>
+Installing `datoso[seed_name]` and `datoso_seed_name` both work - the bracket syntax is shorthand that pip understands.
+</Note>
+
+### Available Official Seeds
+
+| Seed | Description | Install Command |
+|------|-------------|-----------------|
+| `fbneo` | Final Burn Neo (arcade) | `pip install datoso[fbneo]` |
+| `nointro` | No-Intro (Datomatic) | `pip install datoso[nointro]` |
+| `redump` | Redump (disc preservation) | `pip install datoso[redump]` |
+| `pleasuredome` | Pleasuredome (MAME) | `pip install datoso[pleasuredome]` |
+| `tdc` | Total DOS Collection | `pip install datoso[tdc]` |
+| `vpinmame` | Visual Pinball | `pip install datoso[vpinmame]` |
+| `whdload` | WHDLoad (Amiga) | `pip install datoso[whdload]` |
+| `eggman` | Teknoparrot, ALL.Net | `pip install datoso[eggman]` |
+
+### Deprecated Seeds
+
+Some seeds are deprecated but still available:
+- `md_enhanced` - Mega Drive Enhanced
+- `sfc_enhancedcolors` - Super Famicom Enhanced Colors
+- `sfc_msu1` - Super Famicom MSU1
+- `sfc_speedhacks` - Super Famicom Speed Hacks
+- `translatedenglish` - Translated English
+
+<Warning>
+Deprecated seeds may not receive updates and could be removed in future versions.
+</Warning>
+
+## Using Multiple Seeds
+
+### Fetch from Multiple Seeds
+
+Fetch DATs from several seeds sequentially:
+
+```bash
+# Fetch from all installed seeds
+datoso all --fetch
+
+# Fetch from specific seeds only
+datoso all --fetch --only redump fbneo nointro
+
+# Fetch from all except certain seeds
+datoso all --fetch --exclude pleasuredome
+```
+
+### Process Multiple Seeds
+
+Process DATs from several seeds:
+
+```bash
+# Process all seeds
+datoso all --process
+
+# Process specific seeds
+datoso all --process --only redump nointro
+
+# Process with filter applied to all
+datoso all --process --filter Nintendo
+```
+
+### Complete Workflow for Multiple Seeds
+
+```bash
+# Fetch and process everything
+datoso all --fetch --process
+
+# Fetch everything, process selectively
+datoso all --fetch
+datoso all --process --only redump fbneo
+```
+
+## Configuring Seeds
+
+### Seed-Specific Configuration
+
+Some seeds support additional configuration options. Configuration uses uppercase seed names:
+
+```bash
+# Example seed-specific settings
+datoso config --set REDUMP.CustomOption=value
+
+# View current configuration
+datoso config
+```
+
+### Ignoring Seeds
+
+Skip certain seeds when using `all`:
+
+```bash
+# Ignore seeds matching pattern
+datoso config --set PROCESS.SeedIgnoreRegEx="(deprecated|test)"
+
+# Now 'datoso all --fetch' will skip matching seeds
+datoso all --fetch
+```
+
+## Verifying Seed Health
+
+### Run Seed Diagnostics
+
+Check if a seed is properly configured:
+
+```bash
+# Check specific seed
+datoso doctor redump
+
+# Check all installed seeds
+datoso doctor
+```
+
+The doctor command verifies:
+- Seed package is properly installed
+- Required dependencies are available
+- Configuration is valid
+- Network connectivity (for fetch operations)
+
+### Repair Seed Issues
+
+If doctor finds issues, attempt automatic repair:
+
+```bash
+datoso doctor redump --repair
+```
+
+## Seed Workflows
+
+### Workflow 1: Single Seed Setup
+
+<Steps>
+  <Step title="Install seed">
+    ```bash
+    pip install datoso[redump]
+    ```
+  </Step>
+  
+  <Step title="Configure paths">
+    ```bash
+    datoso config --set PATHS.DatPath=/path/to/dats
+    ```
+  </Step>
+  
+  <Step title="Fetch and process">
+    ```bash
+    datoso redump --fetch --process
+    ```
+  </Step>
+  
+  <Step title="Verify results">
+    ```bash
+    ls -R /path/to/dats/
+    ```
+  </Step>
+</Steps>
+
+### Workflow 2: Multi-Seed Setup
+
+<Steps>
+  <Step title="Install multiple seeds">
+    ```bash
+    pip install datoso[redump,fbneo,nointro]
+    ```
+  </Step>
+  
+  <Step title="List installed seeds">
+    ```bash
+    datoso seed list
+    ```
+  </Step>
+  
+  <Step title="Fetch from all">
+    ```bash
+    datoso all --fetch
+    ```
+  </Step>
+  
+  <Step title="Process selectively">
+    ```bash
+    # Process arcade seeds
+    datoso all --process --only fbneo pleasuredome
+    
+    # Process console seeds
+    datoso all --process --only redump nointro
+    ```
+  </Step>
+</Steps>
+
+### Workflow 3: Updating Seeds
+
+<Steps>
+  <Step title="Update seed package">
+    ```bash
+    pip install --upgrade datoso_seed_redump
+    ```
+  </Step>
+  
+  <Step title="Verify new version">
+    ```bash
+    datoso seed details redump
+    ```
+  </Step>
+  
+  <Step title="Fetch updated DATs">
+    ```bash
+    datoso redump --fetch
+    ```
+  </Step>
+  
+  <Step title="Process updates">
+    ```bash
+    datoso redump --process
+    ```
+  </Step>
+</Steps>
+
+## Seed Management Best Practices
+
+### Organization Strategy
+
+Organize your workflow by seed type:
+
+```bash
+# Set up directory structure
+mkdir -p ~/roms/{arcade,console,computer}/dats
+
+# Configure per-seed if needed using .datosorc
+cd ~/roms/arcade
+datoso config --set PATHS.DatPath=./dats --local
+```
+
+### Selective Updates
+
+Update only what you need:
+
+```bash
+# Update only Redump (disc systems)
+datoso redump --fetch --process
+
+# Update only arcade systems
+datoso all --fetch --process --only fbneo pleasuredome
+```
+
+### Filtering Across Seeds
+
+Apply consistent filters across multiple seeds:
+
+```bash
+# Only process Nintendo systems from all seeds
+datoso all --process --filter Nintendo
+
+# Only process Sony systems
+datoso all --process --filter Sony
+```
+
+## Troubleshooting
+
+### Seed Not Found
+
+If a seed isn't recognized:
+
+<Steps>
+  <Step title="Check installation">
+    ```bash
+    pip list | grep datoso
+    ```
+  </Step>
+  
+  <Step title="Reinstall if needed">
+    ```bash
+    pip install --force-reinstall datoso_seed_redump
+    ```
+  </Step>
+  
+  <Step title="Verify with list">
+    ```bash
+    datoso seed list
+    ```
+  </Step>
+</Steps>
+
+### Seed Import Errors
+
+If you see import errors:
+
+```bash
+# Check Python version (3.11+ required)
+python3 --version
+
+# Verify virtual environment
+which python3
+which datoso
+
+# Reinstall in virtual environment
+pip install --upgrade datoso datoso_seed_redump
+```
+
+### Fetch/Process Failures
+
+If seed operations fail:
+
+```bash
+# Run diagnostics
+datoso doctor redump -v
+
+# Check logs
+datoso log
+
+# Verify network connectivity
+curl -I https://www.redump.org
+```
+
+## Advanced Seed Usage
+
+### Custom Seed Actions
+
+Execute specific actions during processing:
+
+```bash
+# Only load and deduplicate
+datoso redump --process --actions LoadDatFile,Deduplicate
+
+# Custom action pipeline
+datoso redump --process --actions "LoadDatFile,Copy,SaveToDatabase"
+```
+
+### Combining Seeds with Filters
+
+Complex filtering across seeds:
+
+```bash
+# Fetch all, but process filtered subsets
+datoso all --fetch
+
+datoso redump --process --filter Sony
+datoso nointro --process --filter Nintendo
+datoso fbneo --process --filter Capcom
+```
+
+### Seed Configuration Overrides
+
+Override seed behavior per-project:
+
+```bash
+# Create local config
+cd /path/to/project
+touch .datosorc
+
+# Set project-specific overrides
+datoso config --set PATHS.DatPath=./dats --local
+datoso config --set PROCESS.Overwrite=True --local
+
+# This project now uses its own settings
+```
+
+## Developing Custom Seeds
+
+To create your own seed for a custom DAT source:
+
+<Note>
+See [datoso_seed_base](https://github.com/laromicas/datoso_seed_base) on GitHub for the seed development template and documentation.
+</Note>
+
+Custom seeds allow you to:
+- Add support for private or custom DAT sources
+- Customize organization rules
+- Implement source-specific fetching logic
+
+## Next Steps
+
+Now that you understand seeds:
+
+1. [Download DATs](/guides/downloading-dats) from your installed seeds
+2. [Process DATs](/guides/processing-dats) to organize them
+3. [Configure DAT properties](/commands/dat) for fine-grained control
+
+<Note>
+Datoso without any seeds installed won't do much - always install at least one seed package to fetch and process DATs.
+</Note>

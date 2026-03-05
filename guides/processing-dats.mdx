@@ -1,0 +1,333 @@
+---
+title: Processing DATs
+description: Learn how to process DAT files with filters, actions, and customization options
+---
+
+After downloading DAT files, you need to process them to organize and prepare them for use with emulators and ROM managers. This guide covers the complete processing workflow.
+
+## Understanding DAT Processing
+
+Processing transforms raw DAT files into an organized structure by:
+- Loading and validating DAT file contents
+- Applying filters to select specific DATs
+- Executing actions (copy, deduplicate, merge)
+- Saving to your configured destination
+- Updating the internal database
+
+## Basic Processing Workflow
+
+<Steps>
+  <Step title="Fetch DATs First">
+    Ensure you have downloaded DATs before processing:
+    
+    ```bash
+    datoso redump --fetch
+    ```
+  </Step>
+
+  <Step title="Process All DATs">
+    Process all downloaded DATs from a seed:
+    
+    ```bash
+    datoso redump --process
+    ```
+    
+    This processes all DAT files from `~/.datoso/tmp/redump/dats/` and copies them to your configured destination.
+  </Step>
+
+  <Step title="Review Results">
+    Datoso displays the status of each processed file:
+    
+    ```
+    ==============================
+    Processing seed redump
+    ------------------------------
+    Processed Sony - PlayStation.dat ['Created']
+    Processed Nintendo - GameCube.dat ['Updated']
+    Processed Sega - Dreamcast.dat ['Exists']
+    ...
+    Finished processing redump
+    ```
+  </Step>
+</Steps>
+
+## Filtering DATs
+
+Use filters to process only specific DAT files by name pattern:
+
+```bash
+# Process only PlayStation DATs
+datoso redump --process --filter PlayStation
+
+# Process only Nintendo systems
+datoso nointro --process --filter Nintendo
+
+# Process only IBM PC DATs
+datoso redump --process --filter "IBM"
+```
+
+The `--filter` parameter matches against the DAT filename, processing only files containing that string.
+
+## Combined Fetch and Process
+
+Fetch and process in one command:
+
+```bash
+# Fetch then process all DATs
+datoso redump --fetch --process
+
+# Fetch then process with filter
+datoso redump --fetch --process --filter Sony
+```
+
+## Processing Actions
+
+Datoso executes a series of actions when processing each DAT. The default action pipeline includes:
+
+### Standard Actions
+
+1. **LoadDatFile** - Loads and parses the DAT file
+2. **DeleteOld** - Removes outdated versions
+3. **Copy** - Copies to destination with proper organization
+4. **SaveToDatabase** - Updates internal database
+5. **MarkMias** - Marks missing-in-action ROMs (if enabled)
+
+### Optional Actions
+
+Additional actions can be enabled via configuration:
+
+```bash
+# Enable automatic deduplication during processing
+datoso config --set PROCESS.ParentMergeEnabled=True
+
+# Enable auto-merge for DATs with automerge property
+datoso config --set PROCESS.AutoMergeEnabled=True
+```
+
+## Processing Multiple Seeds
+
+### Process All Seeds
+
+Process DATs from all installed seeds:
+
+```bash
+datoso all --process
+```
+
+### Selective Processing
+
+```bash
+# Process only specific seeds
+datoso all --process --only redump fbneo
+
+# Process all except certain seeds
+datoso all --process --exclude nointro
+```
+
+## Advanced Processing Options
+
+### Specify Custom Actions
+
+Execute only specific actions during processing:
+
+```bash
+# Only load and deduplicate, skip copying
+datoso redump --process --actions LoadDatFile,Deduplicate
+
+# Multiple actions
+datoso redump --process --actions "LoadDatFile,Copy,SaveToDatabase"
+```
+
+Available actions:
+- `LoadDatFile` - Parse DAT file
+- `DeleteOld` - Remove old versions
+- `Copy` - Copy to destination
+- `SaveToDatabase` - Update database
+- `MarkMias` - Mark MIA ROMs
+- `AutoMerge` - Auto-merge duplicates
+- `Deduplicate` - Remove parent duplicates
+
+### Verbose Output
+
+See detailed processing information:
+
+```bash
+# Enable verbose mode
+datoso redump --process -v
+
+# Quiet mode (minimal output)
+datoso redump --process -q
+```
+
+## Processing Status Messages
+
+Understanding the output:
+
+| Status | Meaning |
+|--------|---------|
+| `Created` | New DAT file created |
+| `Updated` | Existing DAT file updated with new version |
+| `Exists` | DAT already exists and is current |
+| `Overwritten` | DAT overwritten (when Overwrite=True) |
+| `Disabled` | DAT is disabled, not processed |
+| `Deduped` | Duplicates removed via parent merge |
+| `Automerged` | Internal duplicates merged |
+| `No Action Taken, Newer Found` | Database has newer version |
+| `Error` | Processing error occurred |
+
+## Configuration Options
+
+### Essential Processing Settings
+
+```bash
+# Set destination for processed DATs
+datoso config --set PATHS.DatPath=/path/to/organized/dats
+
+# Overwrite existing files even if same date
+datoso config --set PROCESS.Overwrite=True
+
+# Enable parent-based deduplication
+datoso config --set PROCESS.ParentMergeEnabled=True
+
+# Enable auto-merge for applicable DATs
+datoso config --set PROCESS.AutoMergeEnabled=True
+
+# Process Missing-in-Action ROMs
+datoso config --set PROCESS.ProcessMissingInAction=True
+```
+
+### Ignore Patterns
+
+Skip processing certain DATs with regex patterns:
+
+```bash
+# Ignore DATs matching pattern
+datoso config --set PROCESS.DatIgnoreRegEx="(Beta|Proto)"
+
+# Ignore certain seeds
+datoso config --set PROCESS.SeedIgnoreRegEx="deprecated"
+```
+
+## Output Directory Structure
+
+Processed DATs are organized based on each seed's rules:
+
+```
+{DatPath}/
+├── Redump/
+│   ├── Sony - PlayStation/
+│   │   └── Sony - PlayStation.dat
+│   ├── Nintendo - GameCube/
+│   │   └── Nintendo - GameCube.dat
+│   └── ...
+├── No-Intro/
+│   ├── Nintendo - Game Boy/
+│   │   └── Nintendo - Game Boy.dat
+│   └── ...
+└── ...
+```
+
+<Note>
+Each seed plugin defines its own folder structure rules. The structure above is simplified - actual organization may vary by seed.
+</Note>
+
+## Troubleshooting
+
+### Processing Fails
+
+If processing encounters errors:
+
+<Steps>
+  <Step title="Enable verbose logging">
+    ```bash
+    datoso redump --process -v
+    ```
+  </Step>
+  
+  <Step title="Check log file">
+    ```bash
+    datoso log
+    ```
+  </Step>
+  
+  <Step title="Verify seed health">
+    ```bash
+    datoso doctor redump
+    ```
+  </Step>
+  
+  <Step title="Check file permissions">
+    Ensure write permissions on the destination directory:
+    ```bash
+    ls -ld ~/.datoso/DatRoot/
+    ```
+  </Step>
+</Steps>
+
+### Common Issues
+
+**"No Action Taken, Newer Found"**
+- Your database already has a newer version
+- To force reprocess: `datoso config --set PROCESS.Overwrite=True`
+
+**"Disabled" Status**
+- The DAT has been disabled in the database
+- Re-enable with: `datoso dat -d seed:datname --set enabled=True`
+
+**Filter Not Working**
+- Ensure filter string matches part of the filename
+- Use quotes for filters with spaces: `--filter "Sony - PlayStation"`
+
+**Files Not Appearing**
+- Check `PATHS.DatPath` configuration
+- Verify the seed's action rules with verbose mode
+
+## Example Workflows
+
+### Complete Workflow for New Seed
+
+```bash
+# 1. Install seed
+pip install datoso[redump]
+
+# 2. Configure paths
+datoso config --set PATHS.DatPath=/path/to/roms/dats
+
+# 3. Fetch and process
+datoso redump --fetch --process
+
+# 4. Verify results
+ls -R /path/to/roms/dats/
+```
+
+### Update Existing DATs
+
+```bash
+# Fetch updates
+datoso redump --fetch
+
+# Process only updated files
+datoso redump --process
+
+# Files with "Exists" status are already current
+```
+
+### Process Specific System
+
+```bash
+# Fetch all, process only PlayStation
+datoso redump --fetch
+datoso redump --process --filter PlayStation
+```
+
+## Next Steps
+
+After processing, you may want to:
+
+1. [Deduplicate DATs](/guides/deduplication) to remove redundant entries
+2. [Manage DAT properties](/commands/dat) to enable/disable or configure specific DATs
+3. [Work with seeds](/guides/working-with-seeds) to install additional sources
+
+<Note>
+Processing does not download ROMs - it only organizes DAT files that describe ROM collections. Use the processed DATs with ROM managers like ROMVault or CLRMamePro.
+</Note>

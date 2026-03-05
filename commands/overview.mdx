@@ -1,0 +1,131 @@
+---
+title: 'CLI Overview'
+description: 'Overview of Datoso command-line interface and common patterns'
+---
+
+## Introduction
+
+Datoso provides a comprehensive command-line interface (CLI) for managing ROM DAT files from various sources. The CLI follows a subcommand pattern where each major operation has its own command with specific flags and options.
+
+## Basic Usage
+
+```bash
+datoso [global-options] <command> [command-options]
+```
+
+## Global Options
+
+<ParamField path="--version" type="flag">
+  Display the version of Datoso and exit
+</ParamField>
+
+<ParamField path="-v, --verbose" type="flag">
+  Enable verbose output for detailed logging and debugging information
+</ParamField>
+
+## Common Patterns
+
+### Working with Seeds
+
+Seeds are data source plugins that Datoso uses to fetch and process DAT files. Most seed operations follow this pattern:
+
+```bash
+# List installed seeds
+datoso seed installed
+
+# Fetch DAT files from a seed
+datoso <seed-name> --fetch
+
+# Process fetched DAT files
+datoso <seed-name> --process
+
+# Fetch and process in one command
+datoso <seed-name> --fetch --process
+```
+
+### Configuration Management
+
+Datoso uses a hierarchical configuration system with global and local settings:
+
+- **Global config**: `~/.config/datoso/datoso.config`
+- **Local config**: `.datosorc` in current directory
+
+```bash
+# View current configuration
+datoso config
+
+# Get a specific value
+datoso config --get SECTION.Option
+
+# Set a value globally
+datoso config --set SECTION.Option value --global
+```
+
+### Working with DATs
+
+DAT files can be queried and modified using the `dat` command:
+
+```bash
+# Show all DATs
+datoso dat --all
+
+# Show specific DAT
+datoso dat --dat-name "seed:name"
+
+# Filter DATs by field
+datoso dat --find "field=value"
+```
+
+## Command Categories
+
+### Core Commands
+
+- **[seed](/commands/seed)** - Manage seed plugins (list, details, fetch, process)
+- **[dat](/commands/dat)** - Query and modify DAT file metadata
+- **[config](/commands/config)** - View and modify configuration settings
+
+### Utility Commands
+
+- **[doctor](/commands/doctor)** - Validate seed installations and repair issues
+- **[import](/commands/import)** - Import existing DAT files from RomVault
+- **[deduper](/commands/deduper)** - Deduplicate DAT files by removing entries from parent DATs
+
+### Maintenance Commands
+
+- **log** - Display the Datoso log file contents
+
+## Output Formats
+
+Datoso uses color-coded output to improve readability:
+
+- **Green** - Success messages and active elements
+- **Cyan** - Information and identifiers
+- **Blue** - Values and results
+- **Yellow** - Warnings
+- **Red** - Errors and failures
+
+## Exit Codes
+
+Datoso follows standard Unix exit code conventions:
+
+- `0` - Success
+- `1` - Error or failure
+
+## Getting Help
+
+For help with any command, use the `-h` or `--help` flag:
+
+```bash
+# General help
+datoso --help
+
+# Command-specific help
+datoso seed --help
+datoso config --help
+```
+
+## Next Steps
+
+- Learn about [seed commands](/commands/seed) for managing data sources
+- Configure Datoso with [config commands](/commands/config)
+- Query DAT files using [dat commands](/commands/dat)

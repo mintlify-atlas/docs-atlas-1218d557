@@ -1,0 +1,352 @@
+---
+title: Deduplicating DAT Files
+description: Learn how to remove duplicate ROM entries from DAT files using parent-child relationships
+---
+
+Deduplication removes duplicate ROM entries that exist in multiple DAT files, typically when a "child" DAT contains entries that are already present in a "parent" DAT. This is essential for maintaining clean ROM collections without redundancy.
+
+## Understanding Deduplication
+
+Deduplication in Datoso works by:
+- Comparing ROM entries between two DAT files (child and parent)
+- Removing entries from the child that exist in the parent
+- Preserving unique entries in the child
+- Optionally saving the deduplicated result
+
+### When to Use Deduplication
+
+Common scenarios:
+- Removing redundant entries when a system has both main and subset DATs
+- Cleaning up clone/parent relationships
+- Merging specialized DAT variants
+- Removing duplicates before using ROMs with emulators
+
+## Basic Deduplication Workflow
+
+<Steps>
+  <Step title="Identify Parent and Child DATs">
+    Determine which DAT should be the parent (reference) and which should be the child (to be deduplicated).
+    
+    For example:
+    - Parent: `Sony - PlayStation.dat` (main set)
+    - Child: `Sony - PlayStation (Japan).dat` (subset)
+  </Step>
+
+  <Step title="Run Deduplication Command">
+    Use the `deduper` command with input and parent DAT files:
+    
+    ```bash
+    datoso deduper \
+      -input "Sony - PlayStation (Japan).dat" \
+      -p "Sony - PlayStation.dat"
+    ```
+    
+    This removes all entries from the Japan DAT that already exist in the main PlayStation DAT.
+  </Step>
+
+  <Step title="Review Results">
+    Datoso displays the number of ROMs deduplicated:
+    
+    ```
+    Deduped 152 roms
+    File saved to Sony - PlayStation (Japan).dat
+    ```
+  </Step>
+</Steps>
+
+## Deduplication Methods
+
+### Using File Paths
+
+Deduplicate using physical DAT files:
+
+```bash
+# Basic deduplication
+datoso deduper \
+  -input /path/to/child.dat \
+  -p /path/to/parent.dat
+
+# Save to different output file
+datoso deduper \
+  -input /path/to/child.dat \
+  -p /path/to/parent.dat \
+  -o /path/to/deduplicated.dat
+```
+
+<Note>
+If you don't specify `-o` (output), the input file will be overwritten with the deduplicated version.
+</Note>
+
+### Using Database References
+
+Deduplicate using DATs stored in Datoso's database:
+
+```bash
+# Reference DATs by seed:name
+datoso deduper \
+  -input redump:"Sony - PlayStation (Japan)" \
+  -p redump:"Sony - PlayStation"
+```
+
+This method uses the `seed:datname` format to reference DATs that have been previously processed and stored in the database.
+
+### Auto-Merge (Internal Deduplication)
+
+Remove duplicates within a single DAT file:
+
+```bash
+# Deduplicate a single DAT against itself
+datoso deduper -input /path/to/file.dat
+```
+
+This is useful when a DAT file contains internal duplicates.
+
+## Automated Deduplication During Processing
+
+Enable automatic deduplication during the processing workflow:
+
+```bash
+# Enable parent-based deduplication
+datoso config --set PROCESS.ParentMergeEnabled=True
+
+# Enable auto-merge for internal duplicates
+datoso config --set PROCESS.AutoMergeEnabled=True
+
+# Process with deduplication enabled
+datoso redump --process
+```
+
+With these settings enabled, Datoso automatically deduplicates DATs during processing based on parent relationships defined in the DAT metadata.
+
+## Setting Up Parent Relationships
+
+Define parent-child relationships for automatic deduplication:
+
+```bash
+# Set a parent DAT for automatic deduplication
+datoso dat -d redump:"Sony - PlayStation (Japan)" \
+  --set parent="redump:Sony - PlayStation"
+
+# View the relationship
+datoso dat -d redump:"Sony - PlayStation (Japan)"
+```
+
+Now when processing with `ParentMergeEnabled=True`, the child DAT will automatically be deduplicated against its parent.
+
+## Advanced Options
+
+### Dry Run
+
+Preview deduplication without saving changes:
+
+```bash
+# See what would be deduplicated without making changes
+datoso deduper \
+  -input child.dat \
+  -p parent.dat \
+  --dry-run
+```
+
+This enables debug logging and shows what would be removed without modifying files.
+
+### Auto-Merge Mode
+
+For DATs with the `automerge` property set:
+
+```bash
+# Check if a DAT has automerge enabled
+datoso dat -d redump:"Sony - PlayStation" --fields automerge
+
+# Set automerge property
+datoso dat -d redump:"Sony - PlayStation" --set automerge=True
+```
+
+When `PROCESS.AutoMergeEnabled=True`, DATs with the automerge property will be internally deduplicated during processing.
+
+## Understanding Deduplication Output
+
+### Status Messages
+
+When deduplication occurs during processing:
+
+```
+Processed Sony - PlayStation (Japan).dat ['Deduped']
+```
+
+The `Deduped` status indicates duplicates were removed via parent merge.
+
+```
+Processed Game Collection.dat ['Automerged']
+```
+
+The `Automerged` status indicates internal duplicates were removed.
+
+### Logging
+
+Enable verbose output to see details:
+
+```bash
+datoso deduper -input child.dat -p parent.dat -v
+```
+
+Check the log file for detailed information:
+
+```bash
+datoso log
+```
+
+## Practical Examples
+
+### Example 1: Deduplicate Regional Variant
+
+```bash
+# Remove Japanese PlayStation games already in main set
+datoso deduper \
+  -input "Sony - PlayStation (Japan).dat" \
+  -p "Sony - PlayStation.dat" \
+  -o "Sony - PlayStation (Japan-Exclusives).dat"
+```
+
+### Example 2: Automated Workflow
+
+```bash
+# Configure automatic deduplication
+datoso config --set PROCESS.ParentMergeEnabled=True
+
+# Set up parent relationship
+datoso dat -d nointro:"Nintendo - Game Boy (Japan)" \
+  --set parent="nointro:Nintendo - Game Boy"
+
+# Process with automatic deduplication
+datoso nointro --process --filter "Game Boy"
+```
+
+### Example 3: Batch Deduplication
+
+```bash
+# Deduplicate multiple related DATs
+for region in Europe Japan Asia; do
+  datoso deduper \
+    -input "redump:Sega - Dreamcast ($region)" \
+    -p "redump:Sega - Dreamcast"
+done
+```
+
+### Example 4: Clean Import from ROMVault
+
+```bash
+# Import DATs from ROMVault
+datoso import
+
+# Deduplicate imported DATs against main sets
+datoso config --set PROCESS.ParentMergeEnabled=True
+datoso all --process
+```
+
+## Deduplication in Processing Pipeline
+
+When processing with deduplication enabled, the action pipeline includes:
+
+<Steps>
+  <Step title="LoadDatFile">
+    Parse the DAT file
+  </Step>
+  
+  <Step title="DeleteOld">
+    Remove outdated versions
+  </Step>
+  
+  <Step title="Copy">
+    Copy to destination
+  </Step>
+  
+  <Step title="Deduplicate">
+    Remove entries found in parent DAT (if ParentMergeEnabled=True)
+  </Step>
+  
+  <Step title="AutoMerge">
+    Remove internal duplicates (if AutoMergeEnabled=True)
+  </Step>
+  
+  <Step title="SaveToDatabase">
+    Update database
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### No Duplicates Found
+
+If deduplication reports 0 ROMs removed:
+
+<Steps>
+  <Step title="Verify file formats">
+    Both DATs must be in compatible formats (XML or ClrMamePro)
+  </Step>
+  
+  <Step title="Check ROM matching criteria">
+    ROMs are matched by name, size, and hash values
+  </Step>
+  
+  <Step title="Inspect DAT contents">
+    Use a DAT manager to view actual ROM entries
+  </Step>
+  
+  <Step title="Try verbose mode">
+    ```bash
+    datoso deduper -input child.dat -p parent.dat -v
+    ```
+  </Step>
+</Steps>
+
+### Deduplication Errors
+
+Common errors and solutions:
+
+**"Parent dat is required when input is a dat file"**
+- You must specify both `-input` and `-p` parameters when using file paths
+- Or use `-input` alone with `--auto-merge` flag
+
+**"Invalid dat file"**
+- DAT file may be corrupted or in unsupported format
+- Verify the file can be opened with a DAT manager
+
+**Database reference not found**
+- Ensure the DAT has been processed: `datoso seed --process`
+- Check DAT name: `datoso dat -d seed:name`
+
+### Performance Issues
+
+For very large DAT files:
+
+```bash
+# Use file-based deduplication instead of database
+datoso deduper -input large.dat -p parent.dat
+
+# Process in batches with filters
+datoso seed --process --filter "specific subset"
+```
+
+## Next Steps
+
+After deduplication:
+
+1. [Process the deduplicated DATs](/guides/processing-dats) if not already done
+2. [Manage DAT properties](/commands/dat) to configure behavior
+3. Use deduplicated DATs with ROM managers like ROMVault or CLRMamePro
+
+<Note>
+Deduplication modifies DAT files, not ROM files. After deduplication, use ROM management tools to rebuild your actual ROM collection based on the updated DATs.
+</Note>
+
+## Best Practices
+
+1. **Always backup** before deduplicating with `-o` to save to a new file first
+2. **Test with dry-run** to preview changes before committing
+3. **Use parent relationships** in the database for consistent automatic deduplication
+4. **Process systematically** from main sets to regional variants to specialized collections
+5. **Enable logging** with `-v` for complex deduplication workflows
+
+<Warning>
+Deduplication is irreversible when overwriting the input file. Always specify `-o` output file or backup your DATs before deduplicating.
+</Warning>

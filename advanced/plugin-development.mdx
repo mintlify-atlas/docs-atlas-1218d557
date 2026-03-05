@@ -1,0 +1,250 @@
+---
+title: 'Plugin Development'
+description: 'Guide to developing custom seeds and plugins for Datoso'
+---
+
+## Overview
+
+Datoso supports a plugin-based architecture through **seeds**, which are specialized plugins that handle different DAT file sources. You can create custom seeds to support new DAT repositories or customize existing functionality.
+
+<Warning>
+  Datoso requires Python 3.11 or higher for development.
+</Warning>
+
+## Getting Started
+
+To develop a custom seed, you should start with the base seed template:
+
+<Card title="datoso_seed_base" icon="github" href="https://github.com/laromicas/datoso_seed_base">
+  Official seed template repository with boilerplate code and structure
+</Card>
+
+### Seed Structure
+
+A Datoso seed is a Python package with a specific structure. The naming convention is:
+
+```
+datoso_seed_<SEED_NAME>
+```
+
+## Required Components
+
+Every seed must implement the following components:
+
+### 1. Module Attributes
+
+Your seed module must define these attributes in `__init__.py`:
+
+```python
+__prefix__ = 'PREFIX'  # Prefix for identification of dats
+__description__ = 'Description of your seed'
+__version__ = '1.0.0'
+__author__ = 'Your Name'
+```
+
+### 2. Fetch Module
+
+The `fetch.py` module must contain a `fetch()` function to download DAT files:
+
+```python
+# fetch.py
+def fetch():
+    """Function to fetch data from the source."""
+    # Your implementation here
+    pass
+```
+
+### 3. Rules Module
+
+The `rules.py` module must contain a `get_rules()` function that returns the rules engine configuration:
+
+```python
+# rules.py
+def get_rules():
+    """Rules for the rules engine."""
+    return {
+        # Your rules configuration
+    }
+```
+
+### 4. Actions Module
+
+The `actions.py` module must contain a `get_actions()` function that defines DAT processing actions:
+
+```python
+# actions.py
+def get_actions():
+    """Actions to take for dats."""
+    return {
+        # Your actions configuration
+    }
+```
+
+## Plugin Discovery
+
+Datoso automatically discovers installed seeds using Python's `pkgutil.iter_modules()`. Seeds are identified by the naming pattern:
+
+```python
+datoso_seed_*
+```
+
+### Checking Module Requirements
+
+The doctor command validates your seed installation by checking:
+
+- Required module attributes (`__prefix__`, `__description__`)
+- Required functions (`fetch.fetch`, `rules.get_rules`, `actions.get_actions`)
+- External executable dependencies (if specified in `__requirements__`)
+
+Example requirements specification:
+
+```python
+__requirements__ = {
+    'executables': ['wget', 'curl']
+}
+```
+
+## Installation Methods
+
+### As a Package
+
+Install your seed as a regular Python package:
+
+```bash
+pip install datoso_seed_<SEED_NAME>
+```
+
+### For Development
+
+Install in editable mode for development:
+
+```bash
+# Clone your seed repository
+git clone https://github.com/yourusername/datoso_seed_myseed
+cd datoso_seed_myseed
+
+# Install in editable mode
+pip install -e .
+```
+
+### With Datoso Extras
+
+You can also make your seed installable as a Datoso extra by adding it to the `pyproject.toml`:
+
+```toml
+[project.optional-dependencies]
+myseed = [ "datoso-seed-myseed>=1.0.0" ]
+```
+
+## Available Official Seeds
+
+The following official seeds are available as reference:
+
+- **fbneo** - Final Burn Neo
+- **nointro** - No-Intro Datomatic
+- **redump** - Redump
+- **pleasuredome** - Pleasuredome
+- **tdc** - Total DOS Collection
+- **vpinmame** - Visual Pinball
+- **whdload** - WHDLoad
+- **eggman** - Eggman Teknoparrot, ALLs.net
+
+<Note>
+  Some seeds (md_enhanced, sfc_enhancedcolors, sfc_msu1, sfc_speedhacks, translatedenglish) are marked as deprecated.
+</Note>
+
+## Managing Seeds
+
+### List Installed Seeds
+
+View all installed seeds:
+
+```bash
+datoso seed list
+```
+
+### Seed Details
+
+Get detailed information about a specific seed:
+
+```bash
+datoso seed details <seed_name>
+```
+
+This displays:
+- Full module name
+- Version
+- Author
+- Description
+
+## Validation
+
+### Doctor Command
+
+Use the doctor command to validate your seed:
+
+```bash
+# Check all seeds
+datoso doctor
+
+# Check specific seed
+datoso doctor <seed_name>
+```
+
+The doctor command verifies:
+- Module is properly installed
+- All required attributes exist
+- All required functions are present
+- External dependencies are available
+
+## Helper Functions
+
+Datoso provides helper functions in `src/datoso/helpers/plugins.py`:
+
+```python
+from datoso.helpers.plugins import get_seed, installed_seeds, seed_description
+
+# Get a seed module
+seed_module = get_seed('myseed')
+
+# Get all installed seeds
+seeds = installed_seeds()
+
+# Get seed description
+description = seed_description('datoso_seed_myseed')
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Follow Naming Conventions">
+    Always use the `datoso_seed_` prefix for your package name to ensure proper discovery.
+  </Accordion>
+
+  <Accordion title="Implement All Required Components">
+    Ensure your seed has all required attributes and functions. Use `datoso doctor` to validate.
+  </Accordion>
+
+  <Accordion title="Handle Errors Gracefully">
+    Implement proper error handling in your fetch and process functions. Log errors appropriately.
+  </Accordion>
+
+  <Accordion title="Document Your Seed">
+    Provide clear documentation about what your seed does, what sources it supports, and any special requirements.
+  </Accordion>
+
+  <Accordion title="Test Thoroughly">
+    Test both fetch and process operations with various DAT files before publishing.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Common issues and debugging tips
+  </Card>
+  <Card title="Configuration" icon="gear" href="/getting-started/configuration">
+    Learn about Datoso configuration options
+  </Card>
+</CardGroup>

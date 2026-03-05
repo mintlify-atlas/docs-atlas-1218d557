@@ -1,97 +1,230 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+mode: "custom"
 ---
 
-## Setting up
+<div className="relative overflow-hidden dark:bg-[#0f1117] bg-white">
+  {/* Hero Section */}
+  <div className="relative py-20 px-4 sm:px-6 lg:px-8" style={{background: 'linear-gradient(135deg, #4595db 0%, #0494dc 100%)'}}>
+    <div className="max-w-6xl mx-auto">
+      <div className="grid lg:grid-cols-12 gap-8 items-center">
+        <div className="lg:col-span-7">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+            Datoso Documentation
+          </h1>
+          <p className="text-lg sm:text-xl text-white/90 max-w-2xl mb-8">
+            Download, organize, and deduplicate ROM DAT files from multiple sources with a powerful Python CLI tool designed for retro gaming enthusiasts.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <a 
+              href="/quickstart" 
+              className="inline-flex items-center px-6 py-3 rounded-lg font-semibold transition-colors bg-white text-[#4595db] hover:bg-gray-100"
+            >
+              Get Started
+            </a>
+            <a 
+              href="/commands/overview" 
+              className="inline-flex items-center px-6 py-3 rounded-lg font-semibold transition-colors border border-white/30 bg-white/10 text-white hover:bg-white/20"
+            >
+              Explore Commands
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-Get your documentation site up and running in minutes.
+  {/* Quick Start Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">
+      Quick Start
+    </h2>
+    <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+      Get Datoso up and running in minutes with these simple steps.
+    </p>
+    
+    <Steps>
+      <Step title="Install Datoso">
+        Install Datoso with pip. Python 3.11+ is required.
+        
+        ```bash pip
+        pip install datoso
+        ```
+        
+        <Accordion title="Install with specific seeds">
+          Install Datoso with plugins for specific ROM collections:
+          
+          ```bash Install all seeds
+          pip install datoso[all]
+          ```
+          
+          ```bash Install specific seed
+          pip install datoso[redump]
+          ```
+        </Accordion>
+      </Step>
+      
+      <Step title="Choose Your Seeds">
+        List available seeds (plugins) to see what ROM collections are supported.
+        
+        ```bash
+        datoso seed installed
+        ```
+        
+        Available official seeds include fbneo, nointro, redump, pleasuredome, and more.
+      </Step>
+      
+      <Step title="Download and Process DATs">
+        Fetch DAT files from your chosen source and process them into an emulator-friendly structure.
+        
+        ```bash Fetch DATs
+        datoso redump --fetch
+        ```
+        
+        ```bash Process DATs
+        datoso redump --process
+        ```
+      </Step>
+    </Steps>
+  </div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+  {/* Explore by Topic Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">
+      Explore by Topic
+    </h2>
+    <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+      Dive deeper into Datoso's features and capabilities.
+    </p>
+    
+    <CardGroup cols={2}>
+      <Card title="Core Concepts" icon="lightbulb" href="/concepts/understanding-datoso">
+        Learn how Datoso works and understand the architecture behind seeds and DAT processing.
+      </Card>
+      <Card title="Commands Reference" icon="terminal" href="/commands/overview">
+        Complete reference for all CLI commands including seed, dat, config, and deduper.
+      </Card>
+      <Card title="Configuration" icon="gear" href="/configuration/config-file">
+        Configure paths, rules, and settings for global or local project-specific setups.
+      </Card>
+      <Card title="Guides" icon="book-open" href="/guides/downloading-dats">
+        Step-by-step guides for common workflows like downloading, processing, and deduplication.
+      </Card>
+    </CardGroup>
+  </div>
 
-## Make it yours
+  {/* Key Features Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">
+      Key Features
+    </h2>
+    <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+      Everything you need to manage your ROM DAT collection.
+    </p>
+    
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="p-6 rounded-xl border dark:border-[#27272a] border-gray-200 dark:bg-[#1a1d27] bg-gray-50">
+        <div className="flex items-start gap-4">
+          <div className="p-2 rounded-lg dark:bg-[#242838] bg-gray-100">
+            <svg className="w-6 h-6" style={{color: '#4595db'}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-semibold dark:text-white text-gray-900 mb-2">Multi-Source Downloads</h3>
+            <p className="text-sm dark:text-gray-400 text-gray-600">
+              Download DAT files from dat-omatic, redump, pleasuredome, and other trusted sources.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-6 rounded-xl border dark:border-[#27272a] border-gray-200 dark:bg-[#1a1d27] bg-gray-50">
+        <div className="flex items-start gap-4">
+          <div className="p-2 rounded-lg dark:bg-[#242838] bg-gray-100">
+            <svg className="w-6 h-6" style={{color: '#5ebf9e'}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-semibold dark:text-white text-gray-900 mb-2">Emulator-Friendly Structure</h3>
+            <p className="text-sm dark:text-gray-400 text-gray-600">
+              Process DATs into organized folder structures optimized for use with emulators.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-6 rounded-xl border dark:border-[#27272a] border-gray-200 dark:bg-[#1a1d27] bg-gray-50">
+        <div className="flex items-start gap-4">
+          <div className="p-2 rounded-lg dark:bg-[#242838] bg-gray-100">
+            <svg className="w-6 h-6" style={{color: '#0494dc'}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-semibold dark:text-white text-gray-900 mb-2">Smart Deduplication</h3>
+            <p className="text-sm dark:text-gray-400 text-gray-600">
+              Remove duplicate ROMs across DAT files to save space and improve organization.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-6 rounded-xl border dark:border-[#27272a] border-gray-200 dark:bg-[#1a1d27] bg-gray-50">
+        <div className="flex items-start gap-4">
+          <div className="p-2 rounded-lg dark:bg-[#242838] bg-gray-100">
+            <svg className="w-6 h-6" style={{color: '#4595db'}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-semibold dark:text-white text-gray-900 mb-2">Plugin System</h3>
+            <p className="text-sm dark:text-gray-400 text-gray-600">
+              Extend functionality with official seeds for fbneo, nointro, redump, and more collections.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-Design a docs site that looks great and empowers your users.
+  {/* Resources Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">
+      Resources
+    </h2>
+    <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+      Additional resources to help you get the most out of Datoso.
+    </p>
+    
+    <CardGroup cols={3}>
+      <Card title="Plugin Development" icon="puzzle-piece" href="/advanced/plugin-development">
+        Build your own seeds to support additional DAT sources.
+      </Card>
+      <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+        Common issues and solutions to help you resolve problems quickly.
+      </Card>
+      <Card title="GitHub Repository" icon="github" href="https://github.com/laromicas/datoso">
+        View source code, report issues, and contribute to the project.
+      </Card>
+    </CardGroup>
+  </div>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+  {/* CTA Banner */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <div className="rounded-2xl p-8 sm:p-12 text-center" style={{background: 'linear-gradient(135deg, #4595db 0%, #0494dc 100%)'}}>
+      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+        Ready to organize your ROM collection?
+      </h2>
+      <p className="text-lg text-white/90 mb-6 max-w-2xl mx-auto">
+        Get started with Datoso today and streamline your DAT file management workflow.
+      </p>
+      <a 
+        href="/installation" 
+        className="inline-flex items-center px-6 py-3 rounded-lg font-semibold transition-colors bg-white text-[#4595db] hover:bg-gray-100"
+      >
+        Install Now
+      </a>
+    </div>
+  </div>
+</div>

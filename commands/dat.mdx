@@ -1,0 +1,282 @@
+---
+title: 'DAT Commands'
+description: 'Query and modify DAT file metadata in the database'
+---
+
+## Overview
+
+The `dat` command allows you to search, view, and modify metadata for DAT files that have been processed by Datoso. This is useful for managing your DAT collection and customizing DAT properties.
+
+## Basic Usage
+
+```bash
+datoso dat [selection-options] [action-options]
+```
+
+## Selection Options
+
+You must specify exactly one selection method to identify which DAT(s) to work with.
+
+### Select by DAT Name
+
+<ParamField path="-d, --dat-name" type="string">
+  Select a specific DAT using the format `seed:name` (e.g., `redump:Sony - PlayStation`)
+</ParamField>
+
+**Example:**
+```bash
+datoso dat --dat-name "redump:Sony - PlayStation"
+```
+
+If the format is incorrect (missing colon), Datoso will perform a fuzzy search on the name field.
+
+### Select by Filter
+
+<ParamField path="-f, --find" type="string">
+  Select DATs based on filter criteria in the format `field=value` or `field~=value`
+</ParamField>
+
+**Operators:**
+- `=` - Exact match
+- `!=` - Not equal
+- `~=` - Regex/fuzzy match
+
+**Example:**
+```bash
+datoso dat --find "system=PlayStation"
+datoso dat --find "name~=Sony"
+```
+
+### Select All DATs
+
+<ParamField path="-a, --all" type="flag">
+  Show all DATs in the database
+</ParamField>
+
+**Example:**
+```bash
+datoso dat --all
+```
+
+## Action Options
+
+Once you've selected DAT(s), you can perform various actions on them.
+
+### Show Details
+
+<ParamField path="-dt, --details" type="flag">
+  Show detailed information for the selected DAT(s)
+</ParamField>
+
+**Example:**
+```bash
+datoso dat --dat-name "redump:Sony - PlayStation" --details
+```
+
+**Default fields displayed:**
+- name
+- modifier
+- company
+- system
+- seed
+- date
+- path
+- system_type
+- automerge
+- parent
+
+### Show Specific Fields
+
+<ParamField path="-fi, --fields" type="string[]">
+  Display only specific fields (space-separated list)
+</ParamField>
+
+**Available fields:**
+- `name` - DAT name
+- `modifier` - Modifier string
+- `company` - Company name
+- `system` - System name
+- `seed` - Source seed name
+- `date` - DAT date
+- `path` - File path
+- `system_type` - System type
+- `full_name` - Complete DAT name
+- `automerge` - Auto-merge parent
+- `parent` - Parent DAT
+- `version` - DAT version
+- `prefix` - Name prefix
+- `suffix` - Name suffix
+- `status` - DAT status
+- `new_file` - New file path
+- `file` - Original file path
+- `mias` - MIAs marked
+- `static_path` - Static path
+
+**Example:**
+```bash
+datoso dat --all --fields name seed status system
+```
+
+### Set a Variable
+
+<ParamField path="-s, --set" type="string">
+  Manually set a variable using the format `variable=value`
+</ParamField>
+
+**Example:**
+```bash
+datoso dat --dat-name "redump:Sony - PlayStation" --set "status=disabled"
+datoso dat --dat-name "nointro:Nintendo DS" --set "automerge=redump:Sony - PlayStation"
+```
+
+**Value parsing:**
+- Numbers are converted to integers
+- `true`/`false` (case-insensitive) are converted to boolean
+- `none`/`null` (case-insensitive) are converted to None/null
+
+### Unset a Variable
+
+<ParamField path="-u, --unset" type="string">
+  Manually unset a variable (set it to null)
+</ParamField>
+
+**Example:**
+```bash
+datoso dat --dat-name "redump:Sony - PlayStation" --unset parent
+```
+
+### Delete a DAT
+
+<ParamField path="--delete" type="flag" default="false">
+  Delete the DAT from the database
+</ParamField>
+
+**Example:**
+```bash
+datoso dat --dat-name "redump:Sony - PlayStation" --delete
+```
+
+<Warning>
+This only removes the database entry, not the actual DAT file. The DAT will be re-imported if you process the seed again.
+</Warning>
+
+### Mark MIAs
+
+<ParamField path="--mark-mias" type="flag" default="false">
+  Mark MIAs (Missing In Action) for the DAT
+</ParamField>
+
+**Example:**
+```bash
+datoso dat --dat-name "redump:Sony - PlayStation" --mark-mias
+```
+
+This command:
+1. Reads the DAT file
+2. Compares against the MIA database
+3. Marks entries as MIA where appropriate
+
+## Display Options
+
+### Show Only Names
+
+<ParamField path="-on, --only-names" type="flag">
+  Display only the `seed:name` format, one per line (useful for scripting)
+</ParamField>
+
+**Example:**
+```bash
+datoso dat --all --only-names
+```
+
+**Output:**
+```
+redump:Sony - PlayStation
+redump:Sony - PlayStation 2
+nointro:Nintendo DS
+tosec:Commodore 64
+```
+
+## Common Workflows
+
+### Find DATs by System
+
+```bash
+datoso dat --find "system=PlayStation" --fields name seed date
+```
+
+### Disable a DAT
+
+```bash
+datoso dat --dat-name "redump:Sony - PlayStation" --set "status=disabled"
+```
+
+### Check DAT Status
+
+```bash
+datoso dat --dat-name "redump:Sony - PlayStation" --fields name status path
+```
+
+### View All DATs from a Seed
+
+```bash
+datoso dat --find "seed=redump"
+```
+
+### List All DATs (Names Only)
+
+```bash
+datoso dat --all --only-names > dats.txt
+```
+
+### Set Parent for Deduplication
+
+```bash
+datoso dat --dat-name "redump:Sony - PlayStation 2 (Demos)" --set "parent=redump:Sony - PlayStation 2"
+```
+
+### Mark Multiple DATs as MIA
+
+```bash
+# Using a filter
+datoso dat --find "system=PlayStation" --mark-mias
+```
+
+## Output Format
+
+By default, DATs are displayed in a table format using the `psql` style:
+
+```
++--------+------------------------+----------+
+| seed   | name                   | status   |
++--------+------------------------+----------+
+| redump | Sony - PlayStation     | enabled  |
+| redump | Sony - PlayStation 2   | enabled  |
++--------+------------------------+----------+
+```
+
+## Troubleshooting
+
+### DAT Not Found
+
+If a DAT is not found by name:
+1. Verify the seed name is correct
+2. Check if the DAT has been processed: `datoso dat --all --only-names`
+3. Process the seed if necessary: `datoso <seed-name> --process`
+
+### Invalid Variable Name
+
+If setting a variable fails, check the available fields list above and ensure the variable name matches exactly.
+
+### Filter Not Working
+
+Ensure your filter syntax is correct:
+- Use `=` for exact matches
+- Use `~=` for pattern matching
+- Quote values with spaces: `--find "name=Sony - PlayStation"`
+
+## Next Steps
+
+- Learn about [seed commands](/commands/seed) for processing DAT files
+- Use [config commands](/commands/config) to customize DAT processing
+- Use [deduper commands](/commands/deduper) to remove duplicates based on parent relationships

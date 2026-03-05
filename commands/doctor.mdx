@@ -1,0 +1,363 @@
+---
+title: 'Doctor Command'
+description: 'Validate seed installations and repair issues'
+---
+
+## Overview
+
+The `doctor` command performs health checks on installed seed plugins to ensure they have all required dependencies, modules, and attributes. It's useful for troubleshooting issues with seed operations.
+
+## Basic Usage
+
+### Check All Seeds
+
+Validate all installed seeds:
+
+```bash
+datoso doctor
+```
+
+This will check every installed seed for:
+- Required module attributes
+- Required executable dependencies
+- Module structure and imports
+
+### Check Specific Seed
+
+Validate a single seed:
+
+```bash
+datoso doctor <seed-name>
+```
+
+<ParamField path="seed" type="string">
+  Name of the seed to check (optional). If omitted, all seeds are checked.
+</ParamField>
+
+**Example:**
+```bash
+datoso doctor redump
+datoso doctor nointro
+```
+
+## Repair Mode
+
+Attempt to automatically repair detected issues:
+
+```bash
+datoso doctor --repair
+datoso doctor <seed-name> --repair
+```
+
+<ParamField path="-r, --repair" type="flag">
+  Try to repair seed issues automatically
+</ParamField>
+
+<Note>
+Repair functionality is currently under development. Most issues will need to be resolved manually.
+</Note>
+
+**Example:**
+```bash
+# Repair all seeds
+datoso doctor --repair
+
+# Repair specific seed
+datoso doctor redump --repair
+```
+
+## What Doctor Checks
+
+### Required Attributes
+
+Doctor verifies that each seed module has the following attributes:
+
+<ParamField path="__prefix__" type="string">
+  **Prefix for identification of DATs** - Used to identify which DATs belong to this seed
+</ParamField>
+
+<ParamField path="__description__" type="string">
+  **Description of module** - Human-readable description of the seed's purpose
+</ParamField>
+
+<ParamField path="fetch.fetch" type="function">
+  **Function to fetch data** - The main function that downloads DAT files from the source
+</ParamField>
+
+<ParamField path="rules.get_rules" type="function">
+  **Rules for the rules engine** - Defines how to parse and categorize DATs from this seed
+</ParamField>
+
+<ParamField path="actions.get_actions" type="function">
+  **Actions to take for DATs** - Defines the processing pipeline for DATs from this seed
+</ParamField>
+
+### Required Executables
+
+If a seed declares executable requirements in its `__requirements__` attribute, doctor will verify they are available in the system PATH.
+
+**Common executables checked:**
+- `7z` or `7zip` - For archive extraction
+- `wget` or `curl` - For downloading
+- Custom tools specific to certain seeds
+
+## Output Format
+
+### Success (No Issues)
+
+```bash
+$ datoso doctor redump
+Checking seed datoso_seed_redump
+```
+
+No additional output means all checks passed.
+
+### Failures
+
+When issues are found, doctor outputs specific error messages:
+
+```bash
+$ datoso doctor redump
+Checking seed datoso_seed_redump
+ - datoso_seed_redump.__prefix__ not found (Prefix for identification of dats)
+ - datoso_seed_redump.fetch.fetch not found (Function to fetch data)
+redump - 7z not found.
+```
+
+**Error types:**
+
+1. **Missing attribute** - A required module attribute or function is not found
+2. **Missing executable** - A required external command is not installed
+
+## Common Issues and Solutions
+
+### Missing Module Attribute
+
+**Error:**
+```
+- datoso_seed_example.__prefix__ not found (Prefix for identification of dats)
+```
+
+**Cause:** The seed module is missing a required attribute.
+
+**Solution:**
+1. Check if the seed is properly installed: `datoso seed installed`
+2. Reinstall the seed: `pip install --upgrade datoso-seed-<name>`
+3. Check seed documentation for installation requirements
+
+### Missing Executable
+
+**Error:**
+```
+redump - 7z not found.
+```
+
+**Cause:** A required external tool is not installed or not in PATH.
+
+**Solution:**
+1. Install the missing executable:
+   ```bash
+   # On Ubuntu/Debian
+   sudo apt-get install p7zip-full
+   
+   # On macOS
+   brew install p7zip
+   
+   # On Windows
+   # Download from https://www.7-zip.org/
+   ```
+2. Ensure the executable is in your PATH
+3. Run doctor again to verify
+
+### Module Not Found
+
+**Error:**
+```
+Module Seed  -  example not found
+```
+
+**Cause:** The specified seed is not installed.
+
+**Solution:**
+1. List installed seeds: `datoso seed installed`
+2. Install the seed: `pip install datoso-seed-<name>`
+3. Verify installation: `datoso doctor <seed-name>`
+
+## Workflow Examples
+
+### Troubleshooting Failed Fetch
+
+```bash
+# Seed fetch fails
+datoso redump --fetch
+# Error: ...
+
+# Run doctor to diagnose
+datoso doctor redump
+
+# Fix any issues reported
+# Then try fetch again
+datoso redump --fetch
+```
+
+### Post-Installation Validation
+
+```bash
+# After installing a new seed
+pip install datoso-seed-newseed
+
+# Validate installation
+datoso doctor newseed
+
+# If successful, try fetching
+datoso newseed --fetch
+```
+
+### System-Wide Health Check
+
+```bash
+# Check all seeds
+datoso doctor
+
+# Review output for any issues
+# Fix reported problems
+# Verify fixes
+datoso doctor
+```
+
+## Integration with Other Commands
+
+Doctor is automatically invoked when certain operations fail:
+
+### After Failed Fetch
+
+```bash
+$ datoso redump --fetch
+# ... error output ...
+Errors fetching redump
+Please enable logs for more information or use -v parameter
+Checking seed datoso_seed_redump
+```
+
+### After Failed Process
+
+```bash
+$ datoso redump --process
+# ... error output ...
+Errors processing redump
+Please enable logs for more information or use -v parameter
+Checking seed datoso_seed_redump
+```
+
+### After Failed Config Update
+
+```bash
+$ datoso config --rules-update
+Updating rules
+Error updating rules
+# ... error details ...
+Please enable logs for more information or use -v parameter
+Checking seed datoso_seed_redump
+```
+
+## Verbose Output
+
+For more detailed diagnostic information, combine doctor with verbose flag:
+
+```bash
+datoso -v doctor
+datoso -v doctor redump
+```
+
+This provides additional logging information that may help identify issues.
+
+## Exit Codes
+
+- **0** - All checks passed or non-critical warnings only
+- **1** - Critical issues found (seed not found)
+
+## Checking Version Requirements
+
+If a seed specifies version requirements for dependencies, doctor validates them using these operators:
+
+- `>` - Greater than
+- `<` - Less than
+- `>=` - Greater than or equal to
+- `<=` - Less than or equal to
+- `==` - Exactly equal to
+
+**Example requirement:**
+```python
+__requirements__ = {
+    'executables': ['7z'],
+    'packages': [
+        ('requests', '>=2.25.0'),
+    ]
+}
+```
+
+## Best Practices
+
+### Regular Health Checks
+
+Run doctor periodically to ensure seeds remain properly configured:
+
+```bash
+# Weekly health check
+datoso doctor
+```
+
+### Before Reporting Issues
+
+Always run doctor before reporting seed-related issues:
+
+```bash
+# 1. Check seed health
+datoso doctor problematic-seed
+
+# 2. Check logs
+datoso log
+
+# 3. Try with verbose output
+datoso -v problematic-seed --fetch
+```
+
+### After System Updates
+
+Run doctor after system updates that might affect dependencies:
+
+```bash
+# After OS update or package manager changes
+datoso doctor
+```
+
+### Development and Testing
+
+When developing custom seeds, use doctor to validate your implementation:
+
+```bash
+# Check your seed structure
+datoso doctor myseed
+
+# Verify all required attributes are present
+# Fix any issues and re-check
+```
+
+## Limitations
+
+<Warning>
+The repair functionality (`--repair`) is currently under development and may not fix all issues automatically. Manual intervention is often required.
+</Warning>
+
+Current limitations:
+- Cannot automatically install missing executables
+- Cannot fix code-level issues in seed modules
+- Cannot repair network connectivity issues
+- Cannot fix permission issues
+
+## Next Steps
+
+- Review [seed commands](/commands/seed) for working with seeds
+- Check [config commands](/commands/config) for configuration issues
+- Use `datoso log` to view detailed error logs
+- Consult individual seed documentation for specific requirements

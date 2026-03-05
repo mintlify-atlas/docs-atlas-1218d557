@@ -1,0 +1,416 @@
+---
+title: Rules and MIA
+description: Understanding Datoso's rules system and Missing In Action (MIA) tracking
+---
+
+Datoso uses a rules system to define how different systems are processed and tracks Missing In Action (MIA) ROMs - files that are known to exist but are not currently available in preservation sets.
+
+## Rules System
+
+The rules system defines configuration for each gaming system/platform that Datoso processes. Rules are stored in the database and can be updated from an external source.
+
+### System Rules Structure
+
+System rules contain metadata about each platform:
+
+```json
+{
+  "company": "Sony",
+  "system": "PlayStation",
+  "system_type": "Console",
+  "override": {
+    "prefix": "Consoles/Sony PlayStation"
+  },
+  "extra_configs": {
+    "some_setting": "value"
+  }
+}
+```
+
+**Rule Fields:**
+- **company**: Manufacturer or company name (e.g., "Sony", "Nintendo")
+- **system**: System or platform name (e.g., "PlayStation", "NES")
+- **system_type**: Type of system (e.g., "Console", "Handheld", "Computer")
+- **override**: Configuration overrides for this system
+- **extra_configs**: Additional system-specific settings
+
+### Rules Database
+
+Rules are stored in:
+- **File**: `systems.json` in your `DatosoPath` (default: `~/.config/datoso/systems.json`)
+- **Database**: System table in the Datoso database
+- **Source**: External JSON endpoint (configured in `UPDATE_URLS.GoogleSheetUrl`)
+
+### Updating Rules
+
+Update the rules database from the remote source:
+
+```bash
+# Update rules from remote URL
+datoso config --rules-update
+```
+
+This command:
+1. Downloads the latest rules from `UPDATE_URLS.GoogleSheetUrl`
+2. Writes the data to `systems.json`
+3. Truncates and reloads the System table in the database
+4. Makes new rules available for processing
+
+<Tip>
+Update rules regularly to get the latest system configurations and processing instructions.
+</Tip>
+
+### Rules Source Configuration
+
+Configure the rules source URL:
+
+```ini
+[UPDATE_URLS]
+GoogleSheetUrl = https://laromicas.github.io/data/systems.json
+```
+
+```bash
+# View current rules URL
+datoso config --get UPDATE_URLS.GoogleSheetUrl
+
+# Set custom rules URL
+datoso config --set UPDATE_URLS.GoogleSheetUrl https://example.com/my-rules.json
+```
+
+### Using Rules in Seeds
+
+Seed modules automatically use system rules during processing:
+
+```python
+from datoso.database.models import System
+
+# Get system configuration
+system = System.get(System.system == "PlayStation")
+print(f"Company: {system.company}")
+print(f"Type: {system.system_type}")
+print(f"Override: {system.override}")
+```
+
+## Missing In Action (MIA)
+
+Missing In Action (MIA) tracking identifies ROMs that are known to exist but are currently unavailable or incomplete in preservation sets. This helps archivists understand gaps in preservation efforts.
+
+### What is MIA?
+
+A ROM is considered MIA when:
+- It's documented but not available in current DAT files
+- It's partially dumped or corrupt
+- It's known to exist but not yet preserved
+- It's been removed from distribution
+
+### MIA Data Structure
+
+MIA entries contain identifying information:
+
+```json
+{
+  "system": "PlayStation",
+  "game": "Example Game (USA)",
+  "size": "1234567",
+  "crc32": "ABCD1234",
+  "md5": "def1234567890abcdef1234567890abc",
+  "sha1": "1234567890abcdef1234567890abcdef12345678"
+}
+```
+
+**MIA Fields:**
+- **system**: Platform or system name
+- **game**: Game or ROM name
+- **size**: File size in bytes
+- **crc32**: CRC32 checksum
+- **md5**: MD5 hash
+- **sha1**: SHA1 hash (primary identifier)
+
+### MIA Database
+
+MIA data is stored in:
+- **File**: `mia.json` in your `DatosoPath` (default: `~/.config/datoso/mia.json`)
+- **Format**: JSON dictionary keyed by SHA1 hash (or MD5, CRC32, or "system - game")
+- **Source**: External JSON endpoint (configured in `UPDATE_URLS.GoogleSheetMIAUrl`)
+
+### Updating MIA Data
+
+Update the MIA database from the remote source:
+
+```bash
+# Update MIA data from remote URL
+datoso config --mia-update
+```
+
+This command:
+1. Downloads the latest MIA data from `UPDATE_URLS.GoogleSheetMIAUrl`
+2. Writes the data to `mia.json`
+3. Makes MIA tracking available for processing
+
+<Warning>
+MIA processing can increase processing time. Enable it only when needed for preservation tracking.
+</Warning>
+
+### MIA Source Configuration
+
+Configure the MIA data source URL:
+
+```ini
+[UPDATE_URLS]
+GoogleSheetMIAUrl = https://laromicas.github.io/data/mia.json
+```
+
+```bash
+# View current MIA URL
+datoso config --get UPDATE_URLS.GoogleSheetMIAUrl
+
+# Set custom MIA URL
+datoso config --set UPDATE_URLS.GoogleSheetMIAUrl https://example.com/my-mia.json
+```
+
+## MIA Processing
+
+### Enable MIA Processing
+
+Configure MIA processing behavior:
+
+```ini
+[PROCESS]
+# If this is true, it will process the missing in action if found in the seed
+ProcessMissingInAction = false
+# If this is true, it will mark all roms in set if one of them is MIA
+MarkAllRomsInSet = true
+```
+
+### ProcessMissingInAction
+
+When enabled, Datoso checks each ROM against the MIA database:
+
+```bash
+# Enable MIA processing
+datoso config --set PROCESS.ProcessMissingInAction true
+
+# Process seed with MIA checking
+datoso seed redump
+```
+
+**When enabled:**
+- Each ROM is checked against MIA hashes (SHA1, MD5, CRC32)
+- Matching ROMs are flagged as MIA
+- Processing time increases due to hash lookups
+- MIA information is included in output DAT files
+
+**When disabled (default):**
+- MIA checking is skipped
+- Faster processing
+- No MIA flags in output
+
+### MarkAllRomsInSet
+
+Controls whether to mark all ROMs in a set when one is MIA:
+
+```bash
+# Enable marking all ROMs in set
+datoso config --set PROCESS.MarkAllRomsInSet true
+```
+
+**When enabled (default):**
+- If any ROM in a game set is MIA, all ROMs in that set are marked
+- Useful for multi-disc or multi-ROM games
+- Ensures incomplete sets are clearly identified
+
+**When disabled:**
+- Only the specific MIA ROM is marked
+- Other ROMs in the set remain unmarked
+
+## MIA Workflow
+
+### Complete MIA Setup
+
+1. **Update MIA data**:
+   ```bash
+   datoso config --mia-update
+   ```
+
+2. **Enable MIA processing**:
+   ```bash
+   datoso config --set PROCESS.ProcessMissingInAction true
+   ```
+
+3. **Process DATs with MIA checking**:
+   ```bash
+   datoso seed redump
+   ```
+
+### Checking MIA Status
+
+View MIA information programmatically:
+
+```python
+from datoso.database.seeds.mia import get_mias
+
+# Load MIA database
+mias = get_mias()
+
+# Check if a SHA1 is MIA
+sha1 = "1234567890abcdef1234567890abcdef12345678"
+if sha1 in mias:
+    mia_info = mias[sha1]
+    print(f"MIA ROM: {mia_info['game']}")
+    print(f"System: {mia_info['system']}")
+```
+
+## Best Practices
+
+### Rules Management
+
+1. **Update regularly**: Keep rules updated to get latest system configurations
+   ```bash
+   datoso config --rules-update
+   ```
+
+2. **Verify rules URL**: Ensure the rules URL is accessible and current
+   ```bash
+   datoso config --get UPDATE_URLS.GoogleSheetUrl
+   ```
+
+3. **Backup rules**: Keep a backup of `systems.json` before major updates
+   ```bash
+   cp ~/.config/datoso/systems.json ~/.config/datoso/systems.json.backup
+   ```
+
+### MIA Management
+
+1. **Update before major processing**: Refresh MIA data before large seed operations
+   ```bash
+   datoso config --mia-update
+   datoso seed all
+   ```
+
+2. **Enable selectively**: Only enable MIA processing when needed
+   ```bash
+   # Enable for preservation work
+   datoso config --set PROCESS.ProcessMissingInAction true
+   
+   # Disable for performance
+   datoso config --set PROCESS.ProcessMissingInAction false
+   ```
+
+3. **Monitor performance**: MIA processing adds overhead
+   - Use verbose mode to see MIA checks: `datoso -v seed redump`
+   - Consider enabling only for specific seeds
+
+4. **Backup MIA data**: Keep a backup of `mia.json`
+   ```bash
+   cp ~/.config/datoso/mia.json ~/.config/datoso/mia.json.backup
+   ```
+
+## Troubleshooting
+
+### Rules Update Failures
+
+```bash
+# Check rules URL accessibility
+curl https://laromicas.github.io/data/systems.json
+
+# Verify rules URL configuration
+datoso config --get UPDATE_URLS.GoogleSheetUrl
+
+# Check for network issues with verbose output
+datoso -v config --rules-update
+```
+
+### MIA Update Failures
+
+```bash
+# Check MIA URL accessibility
+curl https://laromicas.github.io/data/mia.json
+
+# Verify MIA URL configuration
+datoso config --get UPDATE_URLS.GoogleSheetMIAUrl
+
+# Check for network issues with verbose output
+datoso -v config --mia-update
+```
+
+### MIA Processing Issues
+
+```bash
+# Verify MIA processing is enabled
+datoso config --get PROCESS.ProcessMissingInAction
+
+# Check if MIA data exists
+ls -la ~/.config/datoso/mia.json
+
+# Update MIA data if missing or outdated
+datoso config --mia-update
+```
+
+### Performance Issues
+
+If MIA processing is too slow:
+
+1. **Disable MIA processing**:
+   ```bash
+   datoso config --set PROCESS.ProcessMissingInAction false
+   ```
+
+2. **Process in batches**: Process specific seeds instead of `all`
+   ```bash
+   datoso seed redump  # Instead of: datoso seed all
+   ```
+
+3. **Check MIA database size**:
+   ```bash
+   ls -lh ~/.config/datoso/mia.json
+   ```
+
+## Advanced Usage
+
+### Custom Rules Source
+
+Host your own rules:
+
+1. **Create rules JSON**:
+   ```json
+   {
+     "values": [
+       ["Company", "System", "Override", "ExtraConfigs", "SystemType"],
+       ["Sony", "PlayStation", "{}", "{}", "Console"]
+     ]
+   }
+   ```
+
+2. **Configure custom URL**:
+   ```bash
+   datoso config --set UPDATE_URLS.GoogleSheetUrl https://myserver.com/rules.json
+   ```
+
+3. **Update rules**:
+   ```bash
+   datoso config --rules-update
+   ```
+
+### Custom MIA Data
+
+Maintain your own MIA database:
+
+1. **Create MIA JSON**:
+   ```json
+   {
+     "values": [
+       ["System", "Game", "Size", "CRC32", "MD5", "SHA1"],
+       ["PlayStation", "Example Game", "1234567", "ABC123", "...", "..."]
+     ]
+   }
+   ```
+
+2. **Configure custom URL**:
+   ```bash
+   datoso config --set UPDATE_URLS.GoogleSheetMIAUrl https://myserver.com/mia.json
+   ```
+
+3. **Update MIA**:
+   ```bash
+   datoso config --mia-update
+   ```

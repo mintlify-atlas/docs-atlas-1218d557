@@ -1,0 +1,203 @@
+---
+title: Installation
+description: Install Datoso and configure your environment for ROM DAT management
+---
+
+# Installation
+
+This guide walks you through installing Datoso and its plugin ecosystem on your system.
+
+## Requirements
+
+<Info>
+  **Python 3.11 or higher** is required to run Datoso.
+</Info>
+
+Before installing, verify your Python version:
+
+```bash
+python3 --version
+```
+
+If you need to upgrade Python, visit [python.org](https://www.python.org/downloads/) for installation instructions.
+
+## Installation Methods
+
+### Using Virtual Environment (Recommended)
+
+Using a virtual environment keeps Datoso isolated from your system Python installation and prevents dependency conflicts.
+
+<Steps>
+  <Step title="Create a virtual environment">
+    Navigate to your desired installation directory and create a new virtual environment:
+    
+    ```bash
+    python3 -m venv venv
+    ```
+  </Step>
+  
+  <Step title="Activate the virtual environment">
+    Activate the environment based on your operating system:
+    
+    <CodeGroup>
+      ```bash Linux/macOS
+      source venv/bin/activate
+      ```
+      
+      ```bash Windows
+      venv\Scripts\activate
+      ```
+    </CodeGroup>
+  </Step>
+  
+  <Step title="Install Datoso">
+    With the virtual environment active, install Datoso using pip (see options below).
+  </Step>
+</Steps>
+
+### System-Wide Installation
+
+If you prefer a system-wide installation, you can install directly with pip (not recommended for most users):
+
+```bash
+pip install datoso
+```
+
+## Installation Options
+
+Datoso uses a plugin architecture where the base package doesn't do much without seeds (plugins). Choose one of these installation approaches:
+
+### Install Base Only
+
+The base installation provides the core Datoso functionality without any seed plugins:
+
+```bash
+pip install datoso
+```
+
+<Warning>
+  The base installation alone cannot download or process DATs. You must install at least one seed plugin separately.
+</Warning>
+
+### Install with All Official Seeds
+
+For the complete experience with all officially supported seeds:
+
+```bash
+pip install datoso[all]
+```
+
+This installs Datoso plus all available seed plugins in one command.
+
+### Install with Specific Seeds
+
+To install only the seeds you need, use the seed name as an extra:
+
+<CodeGroup>
+  ```bash No-Intro
+  pip install datoso[nointro]
+  ```
+  
+  ```bash Redump
+  pip install datoso[redump]
+  ```
+  
+  ```bash Final Burn Neo
+  pip install datoso[fbneo]
+  ```
+  
+  ```bash PleasureDome
+  pip install datoso[pleasuredome]
+  ```
+  
+  ```bash Multiple Seeds
+  pip install datoso[nointro,redump,fbneo]
+  ```
+</CodeGroup>
+
+### Install Seeds Separately
+
+You can also install seed plugins independently after installing the base package:
+
+```bash
+# Install base first
+pip install datoso
+
+# Then install individual seeds
+pip install datoso-seed-nointro
+pip install datoso-seed-redump
+pip install datoso-seed-fbneo
+```
+
+## Available Seeds
+
+| Seed Name | Package | Description |
+|-----------|---------|-------------|
+| `fbneo` | `datoso-seed-fbneo` | Final Burn Neo arcade ROMs |
+| `nointro` | `datoso-seed-nointro` | No-Intro DAT-o-MATIC collections |
+| `redump` | `datoso-seed-redump` | Redump optical media preservation |
+| `pleasuredome` | `datoso-seed-pleasuredome` | PleasureDome MAME collections |
+| `tdc` | `datoso-seed-tdc` | Total DOS Collection |
+| `vpinmame` | `datoso-seed-vpinmame` | Visual Pinball ROMs |
+| `whdload` | `datoso-seed-whdload` | WHDLoad Amiga collections |
+| `eggman` | `datoso-seed-eggman` | Teknoparrot and ALL.Net arcade games |
+| `enhanced` | `datoso-seed-enhanced` | Enhanced ROM versions (includes MD Enhanced, SFC Enhanced Colors, SFC MSU-1, SFC Speed Hacks) |
+| `translatedenglish` | `datoso-seed-translatedenglish` | English translation patches |
+
+<Note>
+  Some enhancement seeds (MD Enhanced, SFC Enhanced Colors, SFC MSU-1, SFC Speed Hacks) are now consolidated into the `enhanced` seed but can still be installed individually for backward compatibility.
+</Note>
+
+## Verify Installation
+
+After installation, verify that Datoso is properly installed:
+
+```bash
+datoso --version
+```
+
+You should see the version number printed to the console (current version: 1.1.1).
+
+To see which seeds are installed:
+
+```bash
+datoso seed installed
+```
+
+This command lists all installed seed plugins with their descriptions.
+
+## First-Time Setup
+
+On first run, Datoso will automatically:
+
+- Create configuration directories in `~/.config/datoso/` (Linux/macOS) or `%APPDATA%\datoso\` (Windows)
+- Initialize the local database for tracking DAT metadata
+- Download initial system rules and MIA lists
+
+No additional configuration is required to start using Datoso, though you may want to customize paths and behavior. See the [Configuration](/configuration/config-file) section for details.
+
+## Upgrading
+
+To upgrade Datoso and all installed seeds to the latest version:
+
+```bash
+pip install --upgrade datoso[all]
+```
+
+Or to upgrade just the base package:
+
+```bash
+pip install --upgrade datoso
+```
+
+To upgrade individual seeds:
+
+```bash
+pip install --upgrade datoso-seed-nointro
+```
+
+## Next Steps
+
+Now that Datoso is installed, continue to the [Quickstart Guide](/quickstart) to download and process your first DAT files.
+
+For detailed configuration options, see [Configuration](/configuration/config-file).

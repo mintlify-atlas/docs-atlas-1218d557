@@ -1,0 +1,237 @@
+---
+title: 'Seed Commands'
+description: 'Manage seed plugins for fetching and processing DAT files'
+---
+
+## Overview
+
+Seeds are plugins that define how to fetch and process DAT files from specific sources (e.g., Redump, No-Intro, TOSEC). The seed command provides subcommands for managing and working with these plugins.
+
+## List Installed Seeds
+
+Display all currently installed seed plugins:
+
+```bash
+datoso seed installed
+```
+
+**Output:**
+- Seed name (e.g., `redump`, `nointro`, `tosec`)
+- Description of the seed's purpose
+
+## Show Seed Details
+
+Get detailed information about a specific seed:
+
+```bash
+datoso seed details <seed-name>
+```
+
+<ParamField path="seed-name" type="string" required>
+  The name of the seed to show details for (e.g., `redump`, `nointro`)
+</ParamField>
+
+**Example:**
+```bash
+datoso seed details redump
+```
+
+**Output includes:**
+- Module name
+- Version
+- Author
+- Description
+
+## Working with Individual Seeds
+
+Once seeds are installed, you can interact with them directly using their name as a command.
+
+### Fetch DAT Files
+
+Download DAT files from the seed's source:
+
+```bash
+datoso <seed-name> --fetch
+```
+
+<ParamField path="-f, --fetch" type="flag">
+  Fetch DAT files from the seed's remote source
+</ParamField>
+
+**Example:**
+```bash
+datoso redump --fetch
+```
+
+This command:
+1. Connects to the seed's data source
+2. Downloads available DAT files
+3. Stores them in the configured download path
+4. Reports any errors encountered
+
+### Show Seed Details (Shorthand)
+
+```bash
+datoso <seed-name> --details
+```
+
+<ParamField path="-d, --details" type="flag">
+  Show details of the seed
+</ParamField>
+
+### Process DAT Files
+
+Process downloaded DAT files and import them into the Datoso database:
+
+```bash
+datoso <seed-name> --process
+```
+
+<ParamField path="-p, --process" type="flag">
+  Process DAT files from the seed
+</ParamField>
+
+**Example:**
+```bash
+datoso nointro --process
+```
+
+The process command:
+1. Reads fetched DAT files
+2. Applies configured actions (copy, parse, merge, etc.)
+3. Updates the database
+4. Generates output files
+
+### Process Options
+
+<ParamField path="-a, --actions" type="string">
+  Specify specific actions to execute (can be used multiple times)
+</ParamField>
+
+<ParamField path="-fd, --filter" type="string">
+  Filter which DAT files to process based on filename pattern
+</ParamField>
+
+<ParamField path="-o, --overwrite" type="flag">
+  Force overwrite existing DAT files (only available for individual seeds, not `all`)
+</ParamField>
+
+**Example with actions:**
+```bash
+datoso redump --process --actions LoadDatFile --actions Copy
+```
+
+**Example with filter:**
+```bash
+datoso redump --process --filter "Sony - PlayStation"
+```
+
+## Working with All Seeds
+
+Process multiple seeds at once using the special `all` command:
+
+```bash
+datoso all --fetch
+datoso all --process
+```
+
+### Exclude Seeds
+
+<ParamField path="-e, --exclude" type="string">
+  Exclude specific seeds when using `all` (can be used multiple times)
+</ParamField>
+
+**Example:**
+```bash
+datoso all --fetch --exclude redump --exclude nointro
+```
+
+### Include Only Specific Seeds
+
+<ParamField path="-o, --only" type="string">
+  Process only specified seeds when using `all` (can be used multiple times)
+</ParamField>
+
+**Example:**
+```bash
+datoso all --process --only tosec --only pleasuredome
+```
+
+## Complete Workflow Example
+
+A typical workflow for working with a seed:
+
+```bash
+# 1. Check if seed is installed
+datoso seed installed
+
+# 2. View seed details
+datoso seed details redump
+
+# 3. Fetch DAT files
+datoso redump --fetch
+
+# 4. Process the fetched files
+datoso redump --process
+
+# 5. Check for any issues
+datoso doctor redump
+```
+
+## Combined Fetch and Process
+
+Fetch and process in a single command:
+
+```bash
+datoso <seed-name> --fetch --process
+```
+
+**Example:**
+```bash
+datoso redump --fetch --process
+```
+
+## Seed-Specific Arguments
+
+Some seeds may provide additional command-line arguments specific to their functionality. Use `--help` to see seed-specific options:
+
+```bash
+datoso <seed-name> --help
+```
+
+## Configuration
+
+Seed behavior can be customized in the configuration file under a section named after the seed (in uppercase):
+
+```ini
+[REDUMP]
+OverrideActions = LoadDatFile,Copy,AutoMerge
+
+[NOINTRO]
+OverrideActions = LoadDatFile,Copy,Deduplicate
+```
+
+## Troubleshooting
+
+If a seed encounters errors during fetch or process:
+
+1. Enable verbose output:
+   ```bash
+   datoso -v redump --fetch
+   ```
+
+2. Check the log file:
+   ```bash
+   datoso log
+   ```
+
+3. Run the doctor command:
+   ```bash
+   datoso doctor redump
+   ```
+
+## Next Steps
+
+- Learn about [DAT commands](/commands/dat) for querying processed files
+- Configure seed behavior with [config commands](/commands/config)
+- Validate installations with [doctor commands](/commands/doctor)

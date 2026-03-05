@@ -1,0 +1,319 @@
+---
+title: Path Configuration
+description: Configuring paths for DAT files, databases, downloads, and working directories
+---
+
+Datoso uses several path configuration options to organize DAT files, databases, and temporary files. Understanding these paths is essential for proper setup and integration with ROM management tools.
+
+## Path Configuration Options
+
+All path configurations are in the `[PATHS]` section of the configuration file:
+
+```ini
+[PATHS]
+# the relative path to the database and configuration file
+DatosoPath = ~/.config/datoso
+# The path for the dats inside RomVaultPath
+DatPath = ~/ROMVault/DatRoot
+# the name of the database file
+DatabaseFile = datoso.json
+# the relative path to the temporary file
+DownloadPath = ~/.datoso/dats
+```
+
+### DatosoPath
+
+The main directory for Datoso's database and internal files.
+
+- **Default**: `~/.config/datoso`
+- **Purpose**: Stores the database file, log files, and internal data
+- **Type**: Absolute or home-relative path
+
+```bash
+# Set custom Datoso data directory
+datoso config --set PATHS.DatosoPath ~/.local/share/datoso
+```
+
+**Contents of DatosoPath:**
+- `datoso.json` - Main database file
+- `datoso.log` - Log file (if logging enabled)
+- `systems.json` - System rules data
+- `mia.json` - Missing In Action data
+
+### DatPath
+
+The output directory where processed DAT files are written.
+
+- **Default**: `~/ROMVault/DatRoot`
+- **Purpose**: Final destination for organized DAT files
+- **Type**: Absolute or home-relative path
+- **Integration**: Designed to work with RomVault's DatRoot structure
+
+```bash
+# Set custom DAT output directory
+datoso config --set PATHS.DatPath ~/Emulation/DATs
+```
+
+**Example DatPath structure:**
+```
+~/ROMVault/DatRoot/
+├── Arcade/
+│   └── MAME/
+├── Consoles/
+│   ├── Sony PlayStation/
+│   └── Nintendo NES/
+└── Computer/
+    └── Commodore 64/
+```
+
+<Tip>
+If you use RomVault or similar ROM management tools, point `DatPath` to their DAT directory to automatically organize your collection.
+</Tip>
+
+### DownloadPath
+
+Temporary storage for downloaded DAT files before processing.
+
+- **Default**: `~/.datoso/dats`
+- **Purpose**: Temporary storage for raw downloaded files
+- **Type**: Absolute or home-relative path
+- **Cleanup**: Files are processed and moved to DatPath
+
+```bash
+# Set custom download directory
+datoso config --set PATHS.DownloadPath /tmp/datoso-downloads
+```
+
+<Warning>
+Ensure the download path has sufficient disk space. Some seed operations download large DAT archives.
+</Warning>
+
+### DatabaseFile
+
+Name of the JSON database file stored in DatosoPath.
+
+- **Default**: `datoso.json`
+- **Purpose**: Stores processed DAT metadata and tracking information
+- **Type**: Filename only (not a path)
+
+```bash
+# Use custom database filename
+datoso config --set PATHS.DatabaseFile my-datoso-db.json
+```
+
+## Path Resolution
+
+Datoso uses the `parse_path()` function to resolve all path configurations:
+
+```python
+def parse_path(path: str) -> Path:
+    """Get folder from config."""
+    path = path if path is not None else ''
+    if path.startswith('~'):
+        return Path(path).expanduser()
+    return Path.cwd() / path
+```
+
+**Resolution rules:**
+1. Paths starting with `~` expand to the user's home directory
+2. Absolute paths (starting with `/`) are used as-is
+3. Relative paths are resolved from the current working directory
+
+### Path Examples
+
+```ini
+# Home-relative (recommended)
+DatosoPath = ~/.config/datoso
+
+# Absolute path
+DatosoPath = /opt/datoso/data
+
+# Relative to current directory
+DatosoPath = data/datoso
+```
+
+## Common Path Configurations
+
+### Default Setup (RomVault Integration)
+
+```ini
+[PATHS]
+DatosoPath = ~/.config/datoso
+DatPath = ~/ROMVault/DatRoot
+DatabaseFile = datoso.json
+DownloadPath = ~/.datoso/dats
+```
+
+### Custom Emulation Directory
+
+```ini
+[PATHS]
+DatosoPath = ~/Emulation/.datoso
+DatPath = ~/Emulation/DATs
+DatabaseFile = datoso.json
+DownloadPath = ~/Emulation/.datoso/downloads
+```
+
+### Server/Multi-User Setup
+
+```ini
+[PATHS]
+DatosoPath = /var/lib/datoso
+DatPath = /srv/dats
+DatabaseFile = datoso.json
+DownloadPath = /tmp/datoso-downloads
+```
+
+## Viewing Current Paths
+
+### Get Individual Path Values
+
+```bash
+# View DatPath configuration
+datoso config --get PATHS.DatPath
+
+# View DatosoPath configuration
+datoso config --get PATHS.DatosoPath
+
+# View DownloadPath configuration
+datoso config --get PATHS.DownloadPath
+```
+
+### Get Database Path
+
+```bash
+# Get full path to database file
+datoso config --path
+```
+
+This command prints the complete path: `DatosoPath/DatabaseFile`
+
+## Environment Variable Overrides
+
+Override path configurations using environment variables:
+
+```bash
+# Override DAT output path
+export PATHS.DATPATH=~/CustomDATs
+datoso seed redump
+
+# Override download path for single operation
+PATHS.DOWNLOADPATH=/tmp/downloads datoso seed nointro
+```
+
+## Path Permissions
+
+Ensure Datoso has appropriate permissions for all configured paths:
+
+```bash
+# Create and set permissions for DatosoPath
+mkdir -p ~/.config/datoso
+chmod 755 ~/.config/datoso
+
+# Create and set permissions for DatPath
+mkdir -p ~/ROMVault/DatRoot
+chmod 755 ~/ROMVault/DatRoot
+
+# Create and set permissions for DownloadPath
+mkdir -p ~/.datoso/dats
+chmod 755 ~/.datoso/dats
+```
+
+<Warning>
+Datoso will attempt to create directories if they don't exist, but it needs write permissions to the parent directory.
+</Warning>
+
+## Path Usage in Commands
+
+Different commands use paths for different purposes:
+
+### Seed Commands
+
+```bash
+# Downloads to DownloadPath, processes to DatPath
+datoso seed redump
+```
+
+1. Downloads DAT files to `DownloadPath`
+2. Processes and organizes DAT files
+3. Writes final DATs to `DatPath/[prefix]/[system]/`
+4. Updates database in `DatosoPath/DatabaseFile`
+
+### Import Commands
+
+```bash
+# Imports from specified path to DatPath
+datoso import ~/Downloads/CustomDATs
+```
+
+1. Reads DAT files from specified path
+2. Processes and organizes files
+3. Writes to `DatPath` following prefix rules
+4. Updates database in `DatosoPath/DatabaseFile`
+
+## Best Practices
+
+1. **Use home-relative paths**: Start paths with `~` for portability across systems
+2. **Separate concerns**: Keep downloads separate from final DAT storage
+3. **Backup your database**: The database file in `DatosoPath` tracks all processed DATs
+4. **Use absolute paths for shared setups**: On servers, use absolute paths like `/srv/dats`
+5. **Check disk space**: Monitor `DownloadPath` and `DatPath` for sufficient space
+6. **Consistent naming**: Keep path structures consistent across environments
+
+## Troubleshooting
+
+### Permission Denied Errors
+
+```bash
+# Check directory permissions
+ls -la ~/.config/datoso
+ls -la ~/ROMVault/DatRoot
+
+# Fix permissions
+chmod 755 ~/.config/datoso
+chmod 755 ~/ROMVault/DatRoot
+```
+
+### Path Not Found Errors
+
+```bash
+# Verify configured paths exist
+datoso config --get PATHS.DatPath
+ls -la ~/ROMVault/DatRoot
+
+# Create missing directories
+mkdir -p ~/ROMVault/DatRoot
+mkdir -p ~/.datoso/dats
+```
+
+### Database Location Issues
+
+```bash
+# Check current database path
+datoso config --path
+
+# Verify database file exists
+ls -la ~/.config/datoso/datoso.json
+```
+
+## Programmatic Path Access
+
+In Python code, access and resolve paths:
+
+```python
+from datoso.configuration import config
+from datoso.helpers.file_utils import parse_path
+
+# Get and resolve DatPath
+dat_path = parse_path(config['PATHS'].get('DatPath'))
+print(f"DAT files will be written to: {dat_path}")
+
+# Get database path
+database_path = parse_path(config['PATHS'].get('DatosoPath'))
+database_file = database_path / config['PATHS'].get('DatabaseFile')
+print(f"Database location: {database_file}")
+
+# Get download path
+download_path = parse_path(config['PATHS'].get('DownloadPath'))
+print(f"Downloads stored in: {download_path}")
+```

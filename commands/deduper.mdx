@@ -1,0 +1,418 @@
+---
+title: 'Deduper Command'
+description: 'Deduplicate DAT files by removing entries that exist in parent DATs'
+---
+
+## Overview
+
+The `deduper` command removes duplicate ROM entries from a child DAT file that already exist in a parent DAT file. This is useful for creating subset DATs that only contain unique entries not found in a main collection.
+
+## Basic Usage
+
+```bash
+datoso deduper --input <input-dat> --parent <parent-dat>
+```
+
+The deduper:
+1. Reads the input (child) DAT file
+2. Reads the parent DAT file
+3. Compares ROM entries based on hash values (CRC, MD5, SHA1)
+4. Removes matching entries from the child DAT
+5. Saves the deduplicated DAT file
+
+## Required Arguments
+
+### Input DAT File
+
+<ParamField path="-i, --input" type="string" required>
+  Input DAT file to deduplicate. Can be either a database reference (`seed:name`) or a file path.
+</ParamField>
+
+**Examples:**
+```bash
+# Using database reference
+datoso deduper --input "redump:Sony - PlayStation 2 (Demos)" --parent "redump:Sony - PlayStation 2"
+
+# Using file path
+datoso deduper --input "/path/to/ps2_demos.dat" --parent "/path/to/ps2_main.dat"
+```
+
+### Parent DAT File
+
+You must specify either `--parent` or `--auto-merge` (mutually exclusive).
+
+<ParamField path="-p, --parent" type="string">
+  Parent DAT file to compare against. Can be either a database reference (`seed:name`) or a file path.
+</ParamField>
+
+**Examples:**
+```bash
+# Database reference
+datoso deduper --input "redump:PS2 Demos" --parent "redump:PlayStation 2"
+
+# File path
+datoso deduper --input "./demos.dat" --parent "/roms/main.dat"
+```
+
+<Note>
+When the input is a file path (`.dat` or `.xml`), the `--parent` argument is required unless using `--auto-merge`.
+</Note>
+
+### Auto-Merge Mode
+
+<ParamField path="-au, --auto-merge" type="flag">
+  Automatically detect and use the parent DAT from the database
+</ParamField>
+
+**Example:**
+```bash
+datoso deduper --input "redump:PS2 Demos" --auto-merge
+```
+
+In auto-merge mode:
+1. Datoso looks up the input DAT in the database
+2. Reads the `parent` field from the DAT metadata
+3. Uses that parent DAT for deduplication
+
+<Warning>
+Auto-merge requires that the input DAT has been processed and has a `parent` field set in the database.
+</Warning>
+
+## Optional Arguments
+
+### Output File
+
+<ParamField path="-o, --output" type="string">
+  Output file path. If not specified, overwrites the input file.
+</ParamField>
+
+**Examples:**
+```bash
+# Specify output file
+datoso deduper --input "redump:PS2 Demos" --parent "redump:PS2" --output "/roms/ps2_demos_deduped.dat"
+
+# Overwrite input (default)
+datoso deduper --input "redump:PS2 Demos" --parent "redump:PS2"
+```
+
+<Warning>
+If no output is specified, the input DAT file will be overwritten with the deduplicated version. Make backups of important DAT files.
+</Warning>
+
+### Dry Run
+
+<ParamField path="-dr, --dry-run" type="flag">
+  Show what would be removed without writing the output file
+</ParamField>
+
+**Example:**
+```bash
+datoso deduper --input "redump:PS2 Demos" --parent "redump:PS2" --dry-run
+```
+
+In dry-run mode:
+- No files are written
+- Duplicate entries are identified and logged
+- Enables debug-level logging automatically
+- Useful for previewing changes before committing
+
+## Input Format Options
+
+### Database Reference Format
+
+Reference DAT files already imported into Datoso:
+
+```
+seed:name
+```
+
+**Examples:**
+- `redump:Sony - PlayStation 2`
+- `nointro:Nintendo - Nintendo DS`
+- `tosec:Commodore 64`
+
+### File Path Format
+
+Reference DAT files directly from the filesystem:
+
+```
+/path/to/file.dat
+/path/to/file.xml
+```
+
+**Examples:**
+- `/home/user/roms/ps2.dat`
+- `./local/datfile.dat`
+- `/mnt/storage/collection.xml`
+
+## Deduplication Logic
+
+### Hash Comparison
+
+The deduper compares ROM entries using hash values in this priority order:
+
+1. **SHA1** (most reliable, if present)
+2. **MD5** (fallback)
+3. **CRC32** (fallback)
+
+### Matching Criteria
+
+A ROM is considered a duplicate if:
+- At least one hash value matches between input and parent
+- The hash comparison is successful for the strongest available hash
+
+### Preservation
+
+The deduper preserves:
+- DAT metadata (header, description, version)
+- Game/ROM structure
+- Non-duplicate entries
+
+## Use Cases
+
+### Creating Subset DATs
+
+Remove main collection ROMs from a demo/beta collection:
+
+```bash
+# Remove PS2 main collection ROMs from demos
+datoso deduper \
+  --input "redump:Sony - PlayStation 2 (Demos)" \
+  --parent "redump:Sony - PlayStation 2" \
+  --output "/dats/ps2_demos_unique.dat"
+```
+
+### Avoiding Duplicate Storage
+
+Before building a ROM set, deduplicate child DATs:
+
+```bash
+# Preview what would be removed
+datoso deduper \
+  --input "nointro:Nintendo DS (Demos)" \
+  --parent "nointro:Nintendo DS" \
+  --dry-run
+
+# If satisfied, run without dry-run
+datoso deduper \
+  --input "nointro:Nintendo DS (Demos)" \
+  --parent "nointro:Nintendo DS"
+```
+
+### Auto-Merge Workflow
+
+For DATs with parent relationships configured:
+
+```bash
+# Set parent relationship first
+datoso dat --dat-name "redump:PS2 Demos" --set "parent=redump:PlayStation 2"
+
+# Then use auto-merge
+datoso deduper --input "redump:PS2 Demos" --auto-merge
+```
+
+### Batch Deduplication
+
+Deduplicate multiple DATs in a script:
+
+```bash
+#!/bin/bash
+# dedupe_all_demos.sh
+
+datoso deduper --input "redump:PS1 Demos" --auto-merge
+datoso deduper --input "redump:PS2 Demos" --auto-merge
+datoso deduper --input "redump:PSP Demos" --auto-merge
+```
+
+## Workflow Examples
+
+### Complete Deduplication Workflow
+
+```bash
+# 1. Import DAT files
+datoso import
+
+# 2. Check available DATs
+datoso dat --all --only-names
+
+# 3. Preview deduplication
+datoso deduper \
+  --input "redump:Sony - PlayStation (Demos)" \
+  --parent "redump:Sony - PlayStation" \
+  --dry-run
+
+# 4. Review output, then run for real
+datoso deduper \
+  --input "redump:Sony - PlayStation (Demos)" \
+  --parent "redump:Sony - PlayStation" \
+  --output "/dats/ps1_demos_deduped.dat"
+
+# 5. Verify the result
+ls -lh /dats/ps1_demos_deduped.dat
+```
+
+### Using with File Paths
+
+```bash
+# Deduplicate local files not in database
+datoso deduper \
+  --input "/roms/custom_collection.dat" \
+  --parent "/roms/official_set.dat" \
+  --output "/roms/custom_unique.dat"
+```
+
+### Integration with Seed Processing
+
+```bash
+# 1. Fetch and process a seed
+datoso redump --fetch --process
+
+# 2. Configure parent relationships
+datoso dat --dat-name "redump:PS2 Demos" --set "parent=redump:PlayStation 2"
+
+# 3. Enable auto-deduplication in config
+datoso config --set PROCESS.ParentMergeEnabled true
+
+# 4. Future processing will auto-deduplicate
+# Or manually dedupe existing DATs
+datoso deduper --input "redump:PS2 Demos" --auto-merge
+```
+
+## Output
+
+### Normal Mode
+
+```bash
+$ datoso deduper --input "redump:PS2 Demos" --parent "redump:PS2"
+ File saved to redump:PS2 Demos
+```
+
+The output DAT contains only unique entries not found in the parent.
+
+### Dry Run Mode
+
+```bash
+$ datoso deduper --input "redump:PS2 Demos" --parent "redump:PS2" --dry-run
+DEBUG: Comparing hashes...
+DEBUG: Found 45 duplicate entries
+DEBUG: Found 12 unique entries
+DEBUG: Would remove 45 entries from output
+```
+
+Detailed debug information shows what would be removed without making changes.
+
+## Error Handling
+
+### Parent Required Error
+
+**Error:**
+```
+Parent dat is required when input is a dat file
+```
+
+**Solution:** Specify a parent DAT or use `--auto-merge`:
+```bash
+datoso deduper --input "./file.dat" --parent "./parent.dat"
+# or
+datoso deduper --input "seed:name" --auto-merge
+```
+
+### File Not Found
+
+If input or parent DAT cannot be found:
+1. Verify the database reference: `datoso dat --all --only-names`
+2. Check file paths exist and are readable
+3. Ensure proper permissions on files
+
+### Invalid DAT Format
+
+If the DAT file cannot be parsed:
+1. Verify it's a valid ClrMamePro or XML format
+2. Check for corruption
+3. Try importing first: `datoso import`
+
+## Performance Considerations
+
+### Large DAT Files
+
+For DAT files with thousands of entries:
+- Processing may take several minutes
+- Memory usage scales with DAT size
+- Use `--dry-run` first to estimate time
+
+### Hash Comparison Speed
+
+Hash comparison is generally fast, but:
+- SHA1 comparison is more reliable than CRC32
+- Multiple hash types increase comparison accuracy
+- First match found is used (optimization)
+
+## Best Practices
+
+### Always Backup
+
+Before deduplicating important DATs:
+```bash
+cp important.dat important.dat.backup
+datoso deduper --input important.dat --parent parent.dat
+```
+
+### Use Dry Run First
+
+Preview changes before committing:
+```bash
+# Check what will be removed
+datoso deduper --input "seed:child" --parent "seed:parent" --dry-run
+
+# If satisfied, run for real
+datoso deduper --input "seed:child" --parent "seed:parent"
+```
+
+### Configure Parent Relationships
+
+For frequently used deduplication:
+```bash
+# Set parent once
+datoso dat --dat-name "seed:child" --set "parent=seed:parent"
+
+# Use auto-merge thereafter
+datoso deduper --input "seed:child" --auto-merge
+```
+
+### Integrate with Processing
+
+Enable automatic deduplication during seed processing:
+```bash
+datoso config --set PROCESS.ParentMergeEnabled true
+```
+
+## Troubleshooting
+
+### No Duplicates Found
+
+If deduplication results in no changes:
+1. Verify the parent DAT contains expected entries
+2. Check that hash values exist in both DATs
+3. Ensure correct parent DAT is specified
+4. Use `--dry-run` with `-v` for details
+
+### All Entries Removed
+
+If all entries are removed (empty output):
+1. Verify you specified the correct parent
+2. Check that input and parent aren't reversed
+3. Review with `--dry-run` first
+
+### Auto-Merge Fails
+
+If `--auto-merge` doesn't work:
+1. Verify the input DAT is in database: `datoso dat --dat-name "seed:name"`
+2. Check parent field is set: `datoso dat --dat-name "seed:name" --fields parent`
+3. Set parent if missing: `datoso dat --dat-name "seed:name" --set "parent=seed:parent"`
+
+## Next Steps
+
+- Learn about [DAT commands](/commands/dat) for managing parent relationships
+- Use [seed commands](/commands/seed) for processing with auto-deduplication
+- Configure auto-merge with [config commands](/commands/config)
+- Import DAT files with [import commands](/commands/import)

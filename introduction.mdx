@@ -1,0 +1,86 @@
+---
+title: Introduction
+description: Learn about Datoso, the DAT organizer and sorter for ROM management
+---
+
+# Introduction to Datoso
+
+Datoso (DAT Organizer and SOrter) is a Python command line tool designed to download and organize your DAT ROM files. It provides a unified interface for managing ROM collections from multiple sources, merging them into a folder structure optimized for use with emulators.
+
+## What is Datoso?
+
+Datoso bridges the gap between ROM preservation projects (like No-Intro, Redump, and others) and practical emulator usage. Instead of dealing with complex DAT file hierarchies designed for ROM verification tools, Datoso reorganizes your ROM metadata into an intuitive structure that works seamlessly with emulators.
+
+The tool supports DAT file formats compatible with [ROMVault](https://www.romvault.com/) and can process metadata from various preservation sources.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Multi-Source Support" icon="download">
+    Download updated DATs from multiple sources including DAT-o-MATIC, Redump, and PleasureDome
+  </Card>
+  <Card title="Smart Processing" icon="folder-tree">
+    Process DATs to generate folder structures optimized for emulators rather than archival tools
+  </Card>
+  <Card title="Deduplication" icon="copy">
+    Automatically deduplicate ROMs across different DAT files to save space and reduce redundancy
+  </Card>
+  <Card title="ROMVault Import" icon="file-import">
+    Import existing DATs from ROMVault installations to integrate with your current setup
+  </Card>
+  <Card title="MIA Tracking" icon="circle-exclamation">
+    Mark and track Missing In Action (MIA) ROMs for preservation projects
+  </Card>
+  <Card title="Extensible Seeds" icon="puzzle-piece">
+    Plugin-based "seed" architecture supporting multiple ROM sources and custom workflows
+  </Card>
+</CardGroup>
+
+## Supported Sources (Seeds)
+
+Datoso uses a plugin system called "seeds" to support different ROM preservation sources:
+
+- **fbneo** - Final Burn Neo arcade ROMs
+- **nointro** - No-Intro DAT-o-MATIC collections
+- **redump** - Redump optical media preservation
+- **pleasuredome** - PleasureDome MAME collections
+- **tdc** - Total DOS Collection
+- **vpinmame** - Visual Pinball ROMs
+- **whdload** - WHDLoad Amiga collections
+- **eggman** - Teknoparrot and ALL.Net arcade games
+
+<Note>
+  Additional specialized seeds are available for enhanced ROM versions, translations, and MSU-1 patches.
+</Note>
+
+## How It Works
+
+Datoso operates in two main phases:
+
+1. **Fetch** - Downloads the latest DAT files from your chosen sources
+2. **Process** - Parses the DAT files and reorganizes them according to customizable rules
+
+The tool maintains a local database of your DAT metadata, allowing for efficient updates and tracking changes over time. Configuration is flexible, supporting both global settings and per-project overrides.
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Emulator Library Management">
+    Organize ROM collections by system, region, and release group for easy access in emulator frontends like EmulationStation or LaunchBox.
+  </Accordion>
+  <Accordion title="ROM Preservation">
+    Keep your ROM verification DATs up to date with the latest releases from preservation projects, and track MIA status for rare dumps.
+  </Accordion>
+  <Accordion title="Collection Curation">
+    Deduplicate redundant ROM entries across different preservation sets, prioritizing your preferred sources and versions.
+  </Accordion>
+  <Accordion title="Automated Updates">
+    Run periodic fetches to automatically download new and updated DAT files, keeping your metadata current.
+  </Accordion>
+</AccordionGroup>
+
+## What's Next?
+
+Ready to get started? Continue to the [Installation](/installation) guide to set up Datoso on your system.
+
+Already have Datoso installed? Jump to the [Quickstart](/quickstart) to download and process your first DAT files.

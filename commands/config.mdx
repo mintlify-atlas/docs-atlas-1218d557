@@ -1,0 +1,386 @@
+---
+title: 'Config Commands'
+description: 'View and modify Datoso configuration settings'
+---
+
+## Overview
+
+The `config` command manages Datoso's configuration system, which uses INI-style files with sections and options. Configuration can be set globally or locally per project.
+
+## Configuration Locations
+
+- **Global**: `~/.config/datoso/datoso.config` (default)
+- **Local**: `.datosorc` in the current directory
+
+Local configuration overrides global settings when present.
+
+## Basic Usage
+
+### Show Current Configuration
+
+Display all active configuration settings:
+
+```bash
+datoso config
+```
+
+**Output format:** JSON with all sections and options
+
+**Example output:**
+```json
+{
+    "PATHS": {
+        "DatPath": "/home/user/dats",
+        "DownloadPath": "/tmp/datoso",
+        "DatosoPath": "~/.datoso"
+    },
+    "PROCESS": {
+        "Overwrite": "false",
+        "AutoMergeEnabled": "true"
+    }
+}
+```
+
+## Configuration File Path
+
+Get the path to the database file:
+
+```bash
+datoso config --path
+```
+
+<ParamField path="-p, --path" type="flag">
+  Display the full path to the Datoso database file
+</ParamField>
+
+**Output example:**
+```
+/home/user/.datoso/datoso.db
+```
+
+## Get Configuration Values
+
+Retrieve a specific configuration value:
+
+```bash
+datoso config --get <SECTION>.<Option>
+```
+
+<ParamField path="--get" type="string">
+  Get the value of a configuration option in `SECTION.Option` format (e.g., `PROCESS.Overwrite`)
+</ParamField>
+
+**Example:**
+```bash
+datoso config --get PATHS.DatPath
+datoso config --get PROCESS.Overwrite
+```
+
+### Scope Options for Get
+
+<ParamField path="-g, --global" type="flag">
+  Read from global configuration file (default)
+</ParamField>
+
+<ParamField path="-l, --local" type="flag">
+  Read from local `.datosorc` file
+</ParamField>
+
+**Example:**
+```bash
+# Get from global config
+datoso config --get PATHS.DatPath --global
+
+# Get from local config
+datoso config --get PROCESS.Overwrite --local
+```
+
+If the value is not found in the specified location, the active configuration value is shown.
+
+## Set Configuration Values
+
+Modify a configuration value:
+
+```bash
+datoso config --set <SECTION>.<Option> <value>
+```
+
+<ParamField path="--set" type="string[]">
+  Set a configuration option with format: `SECTION.Option value` (e.g., `PROCESS.Overwrite false`)
+</ParamField>
+
+**Example:**
+```bash
+datoso config --set PROCESS.Overwrite true
+datoso config --set PATHS.DatPath /home/user/roms/dats
+```
+
+### Scope Options for Set
+
+<ParamField path="-g, --global" type="flag">
+  Save to global configuration file (default)
+</ParamField>
+
+<ParamField path="-l, --local" type="flag">
+  Save to local `.datosorc` file in current directory
+</ParamField>
+
+**Example:**
+```bash
+# Set globally
+datoso config --set PROCESS.Overwrite true --global
+
+# Set locally (for current project)
+datoso config --set PROCESS.Overwrite false --local
+```
+
+If the configuration option doesn't exist, you'll be prompted to confirm before creating it.
+
+## Save Configuration
+
+Save the current active configuration to a file:
+
+```bash
+datoso config --save
+```
+
+<ParamField path="-s, --save" type="flag">
+  Save configuration to a `.datosorc` file
+</ParamField>
+
+<ParamField path="-d, --directory" type="string" default="~">
+  Directory to save `.datosorc` file
+  - `~` - Save to home directory
+  - `.` - Save to current directory
+</ParamField>
+
+**Example:**
+```bash
+# Save to home directory
+datoso config --save --directory ~
+
+# Save to current directory
+datoso config --save --directory .
+```
+
+## Update System Rules
+
+Update DAT processing rules from the remote Google Sheets source:
+
+```bash
+datoso config --rules-update
+```
+
+<ParamField path="-ru, --rules-update" type="flag">
+  Update system rules from configured Google Sheets URL
+</ParamField>
+
+**Example:**
+```bash
+datoso config --rules-update
+```
+
+This command:
+1. Connects to the configured Google Sheets URL
+2. Downloads the latest DAT rules
+3. Updates the local rules database
+4. Reports success or errors
+
+## Update MIA Database
+
+Update the Missing In Action (MIA) database from the remote source:
+
+```bash
+datoso config --mia-update
+```
+
+<ParamField path="-mu, --mia-update" type="flag">
+  Update MIA database from configured Google Sheets URL
+</ParamField>
+
+**Example:**
+```bash
+datoso config --mia-update
+```
+
+This command:
+1. Connects to the configured MIA database URL
+2. Downloads the latest MIA information
+3. Updates the local MIA database
+4. Reports success or errors
+
+## Common Configuration Sections
+
+### PATHS Section
+
+Controls file system locations:
+
+```ini
+[PATHS]
+DatPath = /home/user/dats          # Output directory for processed DAT files
+DownloadPath = /tmp/datoso          # Temporary download location
+DatosoPath = ~/.datoso              # Datoso data directory
+DatabaseFile = datoso.db            # Database filename
+```
+
+**Example:**
+```bash
+datoso config --set PATHS.DatPath /mnt/storage/dats
+datoso config --set PATHS.DownloadPath /tmp
+```
+
+### PROCESS Section
+
+Controls DAT processing behavior:
+
+```ini
+[PROCESS]
+Overwrite = false                   # Overwrite existing DAT files
+AutoMergeEnabled = true             # Enable automatic merging
+ParentMergeEnabled = true           # Enable parent deduplication
+DatIgnoreRegEx =                    # Regex pattern to ignore DAT files
+```
+
+**Example:**
+```bash
+datoso config --set PROCESS.Overwrite true
+datoso config --set PROCESS.AutoMergeEnabled false
+```
+
+### IMPORT Section
+
+Controls import behavior:
+
+```ini
+[IMPORT]
+IgnoreRegEx = .*test.*              # Regex pattern to ignore during import
+```
+
+**Example:**
+```bash
+datoso config --set IMPORT.IgnoreRegEx ".*\\(Beta\\).*"
+```
+
+### COMMAND Section
+
+Runtime command options:
+
+```ini
+[COMMAND]
+Quiet = false                       # Suppress non-error output
+Verbose = false                     # Enable detailed output
+```
+
+These are typically set via command-line flags rather than configuration.
+
+### LOG Section
+
+Logging configuration:
+
+```ini
+[LOG]
+LogFile = datoso.log                # Log filename
+```
+
+## Configuration Workflow Examples
+
+### Initial Setup
+
+```bash
+# Set output directory
+datoso config --set PATHS.DatPath /home/user/roms/dats --global
+
+# Set download directory
+datoso config --set PATHS.DownloadPath /tmp/datoso --global
+
+# Enable auto-merge
+datoso config --set PROCESS.AutoMergeEnabled true --global
+```
+
+### Project-Specific Configuration
+
+```bash
+# Create project directory
+mkdir my-romset
+cd my-romset
+
+# Set local overwrite behavior
+datoso config --set PROCESS.Overwrite true --local
+
+# Verify local config
+datoso config --get PROCESS.Overwrite --local
+```
+
+### View Active Configuration
+
+```bash
+# Show all settings
+datoso config
+
+# Show specific section values
+datoso config | grep PATHS
+```
+
+### Update Databases
+
+```bash
+# Update both rules and MIA
+datoso config --rules-update
+datoso config --mia-update
+```
+
+## Configuration Format
+
+The configuration files use INI format with case-sensitive option names:
+
+```ini
+[SECTION_NAME]
+OptionName = value
+AnotherOption = another value
+
+[ANOTHER_SECTION]
+SomeOption = value
+```
+
+**Important notes:**
+- Section names are typically UPPERCASE
+- Option names use PascalCase (first letter uppercase)
+- Values are strings by default
+- Boolean values: `true` or `false`
+- Paths can use `~` for home directory
+
+## Troubleshooting
+
+### Invalid Configuration Key
+
+Error: `Invalid config key, must be in <SECTION>.<Option> format`
+
+**Solution:** Ensure you're using the format `SECTION.Option` with a period separator:
+```bash
+# Correct
+datoso config --set PATHS.DatPath /path/to/dats
+
+# Incorrect
+datoso config --set PATHS/DatPath /path/to/dats
+datoso config --set DatPath /path/to/dats
+```
+
+### Option Not Found
+
+Warning: `Config option not found in current config file`
+
+You'll be prompted to confirm before creating new options. This prevents typos from creating invalid configuration entries.
+
+### Rules/MIA Update Fails
+
+If `--rules-update` or `--mia-update` fails:
+1. Check your internet connection
+2. Run with verbose output: `datoso -v config --rules-update`
+3. Check the log: `datoso log`
+4. Run doctor: `datoso doctor`
+
+## Next Steps
+
+- Learn about [seed commands](/commands/seed) to process DAT files
+- Use [DAT commands](/commands/dat) to manage processed DATs
+- Validate your setup with [doctor commands](/commands/doctor)

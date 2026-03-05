@@ -1,0 +1,331 @@
+---
+title: 'Import Command'
+description: 'Import existing DAT files from RomVault into Datoso'
+---
+
+## Overview
+
+The `import` command allows you to import existing DAT files from a RomVault installation or any directory containing DAT files. Datoso will automatically detect the seed type for each DAT and add it to the database.
+
+## Basic Usage
+
+```bash
+datoso import
+```
+
+This command:
+1. Scans the configured DAT root path for `.dat` files
+2. Attempts to detect the seed type for each DAT
+3. Parses the DAT file structure
+4. Imports metadata into the Datoso database
+
+## Configuration Requirements
+
+Before running import, you must configure the DAT root path:
+
+```bash
+datoso config --set PATHS.DatPath /path/to/romvault/dats
+```
+
+The import command will scan this directory recursively for all `.dat` files.
+
+<Warning>
+If the `DatPath` is not set or doesn't exist, the import command will fail with an error message.
+</Warning>
+
+## Ignore Specific DATs
+
+Exclude certain DAT files from import:
+
+```bash
+datoso import --ignore pattern1 pattern2 pattern3
+```
+
+<ParamField path="-i, --ignore" type="string[]">
+  Ignore DAT files matching these patterns (can be used multiple times)
+</ParamField>
+
+**Example:**
+```bash
+# Ignore beta and demo DATs
+datoso import --ignore Beta --ignore Demo --ignore Sample
+
+# Ignore specific systems
+datoso import --ignore "Atari" --ignore "Commodore"
+```
+
+The patterns are matched against the full file path, so you can ignore based on:
+- Filename substrings
+- Directory names
+- File extensions (though .dat is expected)
+
+## Configuration-Based Ignore
+
+You can also configure a permanent ignore pattern using regex:
+
+```bash
+datoso config --set IMPORT.IgnoreRegEx ".*\\(Beta\\).*|.*\\(Demo\\).*"
+```
+
+This regex pattern will be applied during import to skip matching files automatically.
+
+**Example patterns:**
+```bash
+# Ignore all beta versions
+datoso config --set IMPORT.IgnoreRegEx ".*\\(Beta\\).*"
+
+# Ignore multiple patterns
+datoso config --set IMPORT.IgnoreRegEx ".*(Beta|Demo|Proto|Sample).*"
+
+# Ignore specific regions
+datoso config --set IMPORT.IgnoreRegEx ".*\\(Japan\\).*|.*\\(Asia\\).*"
+```
+
+## Import Process
+
+### Step 1: Scan Directory
+
+Datoso recursively scans the configured `DatPath` for files with `.dat` or `.DAT` extensions.
+
+### Step 2: Detect Seed Type
+
+For each DAT file found, Datoso:
+1. Reads the DAT file structure
+2. Compares against known seed rules
+3. Determines which seed the DAT belongs to (e.g., Redump, No-Intro, TOSEC)
+
+### Step 3: Parse DAT File
+
+Once the seed type is detected, Datoso:
+1. Uses the appropriate seed parser
+2. Extracts metadata (name, system, version, etc.)
+3. Reads game/ROM entries
+
+### Step 4: Import to Database
+
+The parsed data is stored in the Datoso database with:
+- Seed name
+- DAT metadata
+- Original file path
+- Processing status
+
+## Output
+
+The import command provides feedback for each file processed:
+
+```bash
+$ datoso import
+/path/to/dats/Redump/Sony - PlayStation/Sony - PlayStation.dat - redump - DatFile
+/path/to/dats/No-Intro/Nintendo DS/Nintendo DS.dat - nointro - DatFile
+Ignoring /path/to/dats/Beta/test.dat
+/path/to/dats/TOSEC/Commodore 64/C64.dat - tosec - DatFile
+```
+
+**Output format:**
+- File path
+- Detected seed name
+- Parser class used
+- Status messages (errors or warnings)
+
+### Error Messages
+
+**Error detecting seed type (err1):**
+```
+Error detecting seed type err1 - <error details>
+```
+This occurs when the DAT file doesn't match any known seed patterns.
+
+**Error detecting seed type (err2):**
+```
+Error detecting seed type err2 - <error details>
+```
+This occurs when there's a problem parsing the DAT file structure.
+
+## Complete Workflow Example
+
+### Initial Setup
+
+```bash
+# Configure the DAT root path
+datoso config --set PATHS.DatPath /home/user/RomVault/DatRoot
+
+# Verify the path exists
+ls /home/user/RomVault/DatRoot
+
+# Optional: Set ignore pattern for betas and demos
+datoso config --set IMPORT.IgnoreRegEx ".*(Beta|Demo).*"
+```
+
+### Run Import
+
+```bash
+# Import all DATs
+datoso import
+
+# Or import with specific ignores
+datoso import --ignore Beta --ignore Proto --ignore Sample
+```
+
+### Verify Import
+
+```bash
+# Check imported DATs
+datoso dat --all
+
+# Check specific seed
+datoso dat --find "seed=redump"
+
+# Count imported DATs
+datoso dat --all --only-names | wc -l
+```
+
+## Use Cases
+
+### Migrating from RomVault
+
+If you're migrating from RomVault to Datoso:
+
+```bash
+# 1. Point to RomVault DAT directory
+datoso config --set PATHS.DatPath /path/to/RomVault/DatRoot
+
+# 2. Import all DATs
+datoso import
+
+# 3. Verify import
+datoso dat --all --only-names
+```
+
+### Importing Selective Collections
+
+If you only want certain systems:
+
+```bash
+# Import only Nintendo and Sony systems (ignore others)
+datoso import --ignore Sega --ignore Microsoft --ignore Atari
+```
+
+### Re-importing After Manual Changes
+
+If you've manually modified DAT files:
+
+```bash
+# 1. Remove old entries (optional)
+# Use dat commands to delete specific entries
+
+# 2. Re-import
+datoso import
+
+# Note: Existing entries may be updated or duplicated
+```
+
+## Seed Detection
+
+Datoso uses a rules-based system to detect seed types. The detection process:
+
+1. **Reads DAT metadata** - Header, description, version
+2. **Applies seed rules** - Matches patterns against known seeds
+3. **Selects best match** - Uses the most specific matching rule
+
+### Supported Formats
+
+The import command can detect and import DATs from these sources:
+- **Redump** - ClrMamePro format with Redump conventions
+- **No-Intro** - ClrMamePro format with No-Intro conventions
+- **TOSEC** - ClrMamePro format with TOSEC conventions
+- **Other seeds** - Any installed seed with detection rules
+
+### Unsupported DAT Files
+
+If a DAT file cannot be detected:
+- Check that it's a valid ClrMamePro or XML format
+- Verify the seed that created it is installed
+- Check the DAT header for identifying information
+- Consider updating seed rules: `datoso config --rules-update`
+
+## Behavior Notes
+
+### Duplicate Detection
+
+If a DAT is already in the database, the import behavior depends on the file content:
+- Same content = Skip (no update)
+- Different content = Update entry
+- Missing file = Add as new
+
+### File Path Storage
+
+The original file path is stored in the database as `new_file`. This allows:
+- Tracking DAT file locations
+- Re-importing specific DATs
+- Updating from original sources
+
+### No File Modification
+
+The import command is read-only and does not:
+- Modify existing DAT files
+- Move or copy files
+- Delete any data
+
+## Troubleshooting
+
+### DAT Root Path Not Set
+
+**Error:**
+```
+Dat root path not set or does not exist
+```
+
+**Solution:**
+```bash
+datoso config --set PATHS.DatPath /valid/path/to/dats
+```
+
+### No DAT Files Found
+
+If import completes but no DATs are imported:
+1. Verify the path contains `.dat` files
+2. Check file permissions
+3. Ensure files aren't filtered by ignore rules
+4. Try with verbose output: `datoso -v import`
+
+### Seed Type Not Detected
+
+If many DATs show detection errors:
+1. Update seed rules: `datoso config --rules-update`
+2. Install missing seed plugins
+3. Check DAT file format validity
+4. Review error messages for specific issues
+
+### Import Hanging or Slow
+
+For large DAT collections:
+1. Import can take significant time
+2. Use ignore patterns to process smaller batches
+3. Check system resources (disk I/O, memory)
+4. Run with verbose output to see progress
+
+## Performance Considerations
+
+### Large Collections
+
+For thousands of DAT files:
+- Import can take 10+ minutes
+- Database operations may be slow initially
+- Consider importing in batches using ignore patterns
+
+### Selective Import
+
+To improve performance:
+```bash
+# Import one seed at a time
+datoso import --ignore "No-Intro" --ignore "TOSEC"  # Import only Redump
+datoso import --ignore "Redump" --ignore "TOSEC"     # Import only No-Intro
+datoso import --ignore "Redump" --ignore "No-Intro"  # Import only TOSEC
+```
+
+## Next Steps
+
+- Query imported DATs with [dat commands](/commands/dat)
+- Configure processing with [config commands](/commands/config)
+- Process updated versions with [seed commands](/commands/seed)
+- Validate imports with [doctor commands](/commands/doctor)

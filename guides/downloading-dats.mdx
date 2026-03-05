@@ -1,0 +1,213 @@
+---
+title: Downloading DATs
+description: Learn how to download DAT files from different sources using Datoso
+---
+
+Datoso can download DAT files from multiple sources including dat-omatic (No-Intro), Redump, Pleasuredome, and more. This guide covers the complete workflow for fetching DATs.
+
+## Prerequisites
+
+Before downloading DATs, ensure you have:
+- Installed Datoso with at least one seed plugin
+- Configured your download paths (optional, defaults to `~/.datoso/tmp`)
+
+<Note>
+Check your installed seeds with `datoso seed list` to see what sources are available.
+</Note>
+
+## Basic Fetch Workflow
+
+<Steps>
+  <Step title="List Available Seeds">
+    View all installed seed plugins:
+    
+    ```bash
+    datoso seed list
+    ```
+    
+    This displays all available sources you can download from, such as:
+    - `nointro` - No-Intro (dat-omatic)
+    - `redump` - Redump
+    - `fbneo` - Final Burn Neo
+    - `pleasuredome` - Pleasuredome
+    - And more...
+  </Step>
+
+  <Step title="Fetch DATs from a Specific Source">
+    Download all DATs from a specific seed:
+    
+    ```bash
+    datoso redump --fetch
+    ```
+    
+    This downloads all available DAT files from Redump to your configured download path (default: `~/.datoso/tmp/redump/dats/`).
+  </Step>
+
+  <Step title="Monitor Download Progress">
+    Datoso will display progress information during the download:
+    
+    ```
+    ==============================
+    Fetching seed redump
+    ==============================
+    Downloading Sony - PlayStation.dat...
+    Downloading Nintendo - GameCube.dat...
+    ...
+    Finished fetching redump
+    ```
+  </Step>
+</Steps>
+
+## Fetching from Multiple Sources
+
+### Fetch All Seeds at Once
+
+Download DATs from all installed seeds:
+
+```bash
+datoso all --fetch
+```
+
+This iterates through every installed seed and downloads their DAT files.
+
+### Selective Fetching
+
+Fetch only specific seeds when using `all`:
+
+```bash
+# Fetch only redump and fbneo
+datoso all --fetch --only redump fbneo
+
+# Fetch all except nointro
+datoso all --fetch --exclude nointro
+```
+
+## Seed-Specific Examples
+
+### No-Intro (Datomatic)
+
+```bash
+datoso nointro --fetch
+```
+
+<Warning>
+Be careful when downloading from datomatic - they sometimes implement captchas. If the captcha fails, you may be temporarily banned. Consider adding delays between requests using configuration options.
+</Warning>
+
+### Redump
+
+```bash
+datoso redump --fetch
+```
+
+Downloads disc preservation DATs for various console systems.
+
+### Final Burn Neo
+
+```bash
+datoso fbneo --fetch
+```
+
+Downloads arcade DAT files from Final Burn Neo.
+
+### Pleasuredome
+
+```bash
+datoso pleasuredome --fetch
+```
+
+Downloads MAME-related DAT files from Pleasuredome.
+
+## Download Location
+
+By default, DATs are downloaded to:
+
+```
+~/.datoso/tmp/{seed_name}/dats/
+```
+
+For example:
+- Redump DATs: `~/.datoso/tmp/redump/dats/`
+- No-Intro DATs: `~/.datoso/tmp/nointro/dats/`
+
+### Customizing Download Path
+
+Configure a custom download location:
+
+```bash
+# Set globally
+datoso config --set PATHS.DownloadPath=/path/to/downloads
+
+# Set locally for current directory
+datoso config --set PATHS.DownloadPath=/path/to/downloads --local
+```
+
+## Verifying Downloads
+
+After fetching, verify the downloads:
+
+```bash
+# Check the downloaded files
+ls -lh ~/.datoso/tmp/redump/dats/
+
+# Run doctor to verify seed health
+datoso doctor redump
+```
+
+## Troubleshooting
+
+### Fetch Errors
+
+If you encounter errors during fetch:
+
+```bash
+# Enable verbose logging
+datoso redump --fetch -v
+
+# Check the log file
+datoso log
+
+# Run diagnostics
+datoso doctor redump
+```
+
+Common issues:
+- **Network timeouts**: Check your internet connection
+- **Captcha errors**: Wait before retrying (especially with datomatic)
+- **Missing dependencies**: Run `datoso doctor` to check requirements
+
+### Empty Downloads
+
+If no files are downloaded:
+
+<Steps>
+  <Step title="Verify seed is installed">
+    ```bash
+    datoso seed list
+    ```
+  </Step>
+  
+  <Step title="Check seed details">
+    ```bash
+    datoso seed details redump
+    ```
+  </Step>
+  
+  <Step title="Run diagnostics">
+    ```bash
+    datoso doctor redump
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+After downloading DATs, you'll typically want to:
+
+1. [Process the DATs](/guides/processing-dats) to organize them for your emulators
+2. [Deduplicate DATs](/guides/deduplication) to remove redundant entries
+3. [Configure DAT properties](/commands/dat) for specific behavior
+
+<Note>
+The `--fetch` command only downloads DAT files. To process them into your final structure, use the `--process` command covered in the [Processing DATs guide](/guides/processing-dats).
+</Note>

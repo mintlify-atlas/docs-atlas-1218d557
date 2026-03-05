@@ -1,0 +1,241 @@
+---
+title: Configuration File
+description: Understanding Datoso configuration files, structure, and precedence
+---
+
+Datoso uses INI-style configuration files to manage settings across different sections. The configuration system supports both global and local configurations with a clear precedence order.
+
+## Configuration File Locations
+
+Datoso reads configuration files in the following order, with later files overriding earlier ones:
+
+1. **Default configuration**: `src/datoso/datoso.ini` (bundled with Datoso)
+2. **Home directory**: `~/.datosorc` (user-specific global config)
+3. **XDG config directory**: `~/.config/datoso/datoso.config` (preferred global location)
+4. **Current working directory**: `.datosorc` (project-specific local config)
+
+<Tip>
+Configuration files are read in order, with each subsequent file overriding values from previous files. This allows you to set global defaults and override them per-project.
+</Tip>
+
+## Configuration File Structure
+
+The configuration file uses INI format with sections and key-value pairs:
+
+```ini
+[GENERAL]
+# This is the default union character
+UnionCharacter = -
+
+[COMMAND]
+# This will try to quiet output
+Quiet = false
+# This will show every command executed and its output
+Verbose = false
+
+[LOG]
+# This will log every command executed and its output
+Logging = false
+LogLevel = INFO
+# This is the path to the log file
+LogFile = datoso.log
+
+[PATHS]
+# the relative path to the database and configuration file
+DatosoPath = ~/.config/datoso
+# The path for the dats inside RomVaultPath
+DatPath = ~/ROMVault/DatRoot
+# the name of the database file
+DatabaseFile = datoso.json
+# the relative path to the temporary file
+DownloadPath = ~/.datoso/dats
+```
+
+## Configuration Sections
+
+### GENERAL
+
+General application settings.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `UnionCharacter` | string | `-` | Character used to join string elements |
+
+### COMMAND
+
+Command-line behavior settings.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `Quiet` | boolean | `false` | Suppress output messages |
+| `Verbose` | boolean | `false` | Show detailed command execution and output |
+
+### LOG
+
+Logging configuration.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `Logging` | boolean | `false` | Enable file logging (independent of Quiet setting) |
+| `LogLevel` | string | `INFO` | Logging level (DEBUG, INFO, WARNING, ERROR) |
+| `LogFile` | string | `datoso.log` | Name of the log file |
+
+### PREFIXES
+
+Platform prefixes for organizing DAT files. These replace modifiers when processing.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `Arcade` | `Arcade` | Arcade systems |
+| `Audio` | `Other/Audio` | Audio devices |
+| `Book` | `Other/Book` | E-book readers |
+| `Calculator` | `Other/Calculator` | Calculators |
+| `Computer` | `Computer` | Computer systems |
+| `Console` | `Consoles` | Console systems |
+| `Handheld` | `Consoles` | Handheld consoles |
+| `PDA` | `Mobile` | PDAs |
+| `Phone` | `Mobile` | Phone systems |
+| `Source Code` | `Other/Source Code` | Source code archives |
+| `Video` | `Other/Video` | Video players |
+| `Mobile` | `Mobile` | Mobile devices |
+| `Manuals` | `Other/Manuals` | Manual collections |
+| `BIOS Images` | `Other/BIOS Images` | BIOS files |
+
+### IMPORT
+
+Import operation settings.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `IgnoreRegEx` | regex | _(empty)_ | Regular expression to ignore files during import |
+
+### PROCESS
+
+Processing behavior settings.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `Overwrite` | boolean | `false` | Overwrite existing DAT files |
+| `DatIgnoreRegEx` | regex | `.*(?:Update ROMs).*` | Ignore DAT files matching this pattern |
+| `SeedIgnoreRegEx` | regex | _(empty)_ | Ignore seeds matching this pattern when using `all` |
+| `ProcessMissingInAction` | boolean | `false` | Process MIA (Missing In Action) ROMs if found |
+| `MarkAllRomsInSet` | boolean | `true` | Mark all ROMs in a set if one is MIA |
+| `AutoMergeEnabled` | boolean | `true` | Remove duplicates within the same DAT |
+| `ParentMergeEnabled` | boolean | `true` | Remove duplicates from parent DAT |
+
+### UPDATE_URLS
+
+External data source URLs.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `GoogleSheetUrl` | `https://laromicas.github.io/data/systems.json` | URL for system rules configuration |
+| `GoogleSheetMIAUrl` | `https://laromicas.github.io/data/mia.json` | URL for MIA data |
+
+### DOWNLOAD
+
+Download behavior settings.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `PrefferDownloadUtility` | string | `wget` | Preferred download tool (`wget`, `urllib`, `curl`, `aria2c`) |
+| `Workers` | integer | `10` | Number of simultaneous downloads |
+
+## Getting Configuration Values
+
+Use the `datoso config --get` command to retrieve configuration values:
+
+```bash
+# Get the current active value
+datoso config --get PATHS.DatPath
+
+# Get value from global config only
+datoso config --get PATHS.DatPath --global
+
+# Get value from local config only
+datoso config --get PATHS.DatPath --local
+```
+
+Configuration values are accessed using the format `SECTION.Option` (case-sensitive).
+
+## Setting Configuration Values
+
+Use the `datoso config --set` command to modify configuration values:
+
+```bash
+# Set in global config (~/.config/datoso/datoso.config)
+datoso config --set PATHS.DatPath ~/MyDats
+
+# Set in local config (.datosorc in current directory)
+datoso config --set PATHS.DatPath ~/MyDats --local
+```
+
+<Warning>
+The `--set` command creates the configuration file if it doesn't exist and adds the section if needed.
+</Warning>
+
+## Environment Variables
+
+Configuration values can be overridden using environment variables with the format `SECTION.OPTION`:
+
+```bash
+# Override the DatPath configuration
+export PATHS.DATPATH=~/CustomDats
+datoso seed redump
+
+# Override logging settings
+export LOG.LOGGING=true
+export LOG.LOGLEVEL=DEBUG
+datoso seed redump
+```
+
+Environment variables take precedence over all configuration files.
+
+## Local vs Global Configuration
+
+### Global Configuration
+
+Global configuration affects all Datoso operations for your user account:
+
+- **Location**: `~/.config/datoso/datoso.config` (preferred) or `~/.datosorc`
+- **Use case**: System-wide defaults, paths, credentials
+- **Set with**: `datoso config --set SECTION.Option value`
+
+### Local Configuration
+
+Local configuration is project-specific:
+
+- **Location**: `.datosorc` in your project directory
+- **Use case**: Project-specific overrides, testing settings
+- **Set with**: `datoso config --set SECTION.Option value --local`
+
+<Tip>
+Use local configuration files in project directories to override global settings for specific workflows or testing scenarios.
+</Tip>
+
+## Best Practices
+
+1. **Keep sensitive data out of config files**: Use environment variables for credentials
+2. **Use local configs for testing**: Override settings temporarily without affecting global config
+3. **Document custom settings**: Add comments to explain non-standard configurations
+4. **Version control**: Add `.datosorc` to `.gitignore` if it contains machine-specific paths
+5. **Use absolute paths**: Prefix paths with `~` for home directory or use absolute paths to avoid confusion
+
+## Programmatic Access
+
+In Python code, access configuration using the `config` object:
+
+```python
+from datoso.configuration import config
+
+# Get a string value
+dat_path = config.get('PATHS', 'DatPath', fallback='~/ROMVault/DatRoot')
+
+# Get a boolean value
+verbose = config.getboolean('COMMAND', 'Verbose', fallback=False)
+
+# Access with dictionary syntax
+log_level = config['LOG']['LogLevel']
+```
+
+The configuration system automatically handles environment variables and file precedence.

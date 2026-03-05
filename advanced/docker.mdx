@@ -1,0 +1,429 @@
+---
+title: 'Docker Usage'
+description: 'Running Datoso in Docker containers'
+---
+
+## Overview
+
+Datoso provides an official Docker image for easy deployment and consistent environments. The Docker image comes pre-installed with all official seeds and dependencies.
+
+## Official Dockerfile
+
+The official Dockerfile is available in the Datoso repository and provides:
+
+- Python 3.12 slim base image
+- All official Datoso seeds pre-installed
+- Required system dependencies (wget, curl)
+- Virtual environment for isolated Python packages
+
+## Quick Start
+
+### Pull and Run
+
+```bash
+# Pull the latest image (when available on Docker Hub)
+docker pull laromicas/datoso:latest
+
+# Run with default command
+docker run laromicas/datoso --help
+```
+
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/laromicas/datoso
+cd datoso
+
+# Build the image
+docker build -t datoso .
+
+# Run the container
+docker run datoso --help
+```
+
+## Image Details
+
+The Dockerfile structure:
+
+```dockerfile
+FROM python:3.12-slim
+WORKDIR /datoso
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/datoso/venv/bin:$PATH"
+RUN python -m venv venv
+RUN . venv/bin/activate
+RUN pip install --upgrade pip
+RUN pip install setuptools
+RUN pip install datoso[all]
+
+ENTRYPOINT ["datoso"]
+```
+
+### Key Features
+
+- **Base Image**: `python:3.12-slim` for minimal size
+- **Working Directory**: `/datoso`
+- **Virtual Environment**: Isolated Python environment at `/datoso/venv`
+- **Dependencies**: Includes `wget` and `curl` for downloads
+- **Pre-installed**: All official seeds via `datoso[all]`
+- **Entry Point**: `datoso` command
+
+## Usage Examples
+
+### Basic Commands
+
+```bash
+# Show version
+docker run datoso --version
+
+# List installed seeds
+docker run datoso seed list
+
+# Show help
+docker run datoso --help
+```
+
+### Fetching DATs
+
+```bash
+# Fetch dats from a specific seed
+docker run datoso redump --fetch
+
+# Fetch with filter
+docker run datoso nointro --fetch --filter "Nintendo"
+
+# Fetch with verbose output
+docker run datoso fbneo --fetch -v
+```
+
+### Processing DATs
+
+```bash
+# Process dats
+docker run datoso redump --process
+
+# Process with filter
+docker run datoso nointro --process --filter "Nintendo"
+```
+
+## Volume Mounts
+
+To persist data and configuration, mount volumes:
+
+### Configuration Directory
+
+Mount your configuration directory:
+
+```bash
+docker run -v ~/.config/datoso:/root/.config/datoso datoso config
+```
+
+### DAT Files
+
+Mount your DAT directory:
+
+```bash
+docker run \
+  -v ~/.config/datoso:/root/.config/datoso \
+  -v ~/ROMVault/DatRoot:/datoso/dats \
+  datoso redump --fetch --process
+```
+
+### Download Cache
+
+Mount the download cache directory:
+
+```bash
+docker run \
+  -v ~/.config/datoso:/root/.config/datoso \
+  -v ~/.datoso/dats:/root/.datoso/dats \
+  -v ~/ROMVault/DatRoot:/datoso/dats \
+  datoso redump --fetch
+```
+
+## Complete Setup
+
+### Docker Compose
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+
+services:
+  datoso:
+    image: datoso
+    build: .
+    volumes:
+      # Configuration
+      - ~/.config/datoso:/root/.config/datoso
+      # Download cache
+      - ~/.datoso/dats:/root/.datoso/dats
+      # DAT output directory
+      - ~/ROMVault/DatRoot:/datoso/dats
+    environment:
+      # Optional: Override configuration via environment variables
+      - PATHS.DATPATH=/datoso/dats
+      - LOG.LOGGING=true
+      - LOG.LOGLEVEL=INFO
+    command: ["--help"]
+```
+
+Run with Docker Compose:
+
+```bash
+# Build and run
+docker-compose up
+
+# Run specific seed
+docker-compose run datoso redump --fetch
+
+# Run with custom command
+docker-compose run datoso config
+```
+
+## Environment Variables
+
+Override configuration using environment variables:
+
+```bash
+docker run \
+  -e PATHS.DATPATH=/datoso/dats \
+  -e LOG.LOGGING=true \
+  -e LOG.LOGLEVEL=DEBUG \
+  -e DOWNLOAD.WORKERS=15 \
+  -v ~/.config/datoso:/root/.config/datoso \
+  datoso config
+```
+
+Format: `<SECTION>.<OPTION>=<value>`
+
+Common environment variables:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `PATHS.DATPATH` | DAT output directory | `/datoso/dats` |
+| `PATHS.DOWNLOADPATH` | Download cache directory | `/root/.datoso/dats` |
+| `LOG.LOGGING` | Enable logging | `true` |
+| `LOG.LOGLEVEL` | Log level | `DEBUG` |
+| `DOWNLOAD.WORKERS` | Concurrent downloads | `10` |
+| `COMMAND.VERBOSE` | Verbose output | `true` |
+
+## Custom Image
+
+### Adding Additional Seeds
+
+Create a custom Dockerfile:
+
+```dockerfile
+FROM python:3.12-slim
+WORKDIR /datoso
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    aria2 \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/datoso/venv/bin:$PATH"
+RUN python -m venv venv
+RUN . venv/bin/activate
+
+RUN pip install --upgrade pip
+RUN pip install setuptools
+
+# Install base datoso
+RUN pip install datoso
+
+# Install only specific seeds
+RUN pip install datoso-seed-redump
+RUN pip install datoso-seed-nointro
+RUN pip install datoso-seed-fbneo
+
+# Or install your custom seed
+RUN pip install datoso-seed-mycustom
+
+ENTRYPOINT ["datoso"]
+```
+
+### Pre-configured Image
+
+Include a pre-configured `datoso.config`:
+
+```dockerfile
+FROM python:3.12-slim
+WORKDIR /datoso
+
+# ... [install steps] ...
+
+# Copy configuration
+COPY datoso.config /root/.config/datoso/datoso.config
+
+ENTRYPOINT ["datoso"]
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Volume Mounts">
+    Always mount volumes for:
+    - Configuration (`~/.config/datoso`)
+    - Download cache (`~/.datoso/dats`)
+    - DAT output directory (`~/ROMVault/DatRoot`)
+    
+    This ensures data persistence across container restarts.
+  </Accordion>
+
+  <Accordion title="Set Resource Limits">
+    Limit CPU and memory usage for long-running operations:
+    ```bash
+    docker run \
+      --cpus="2.0" \
+      --memory="4g" \
+      -v ~/.config/datoso:/root/.config/datoso \
+      datoso redump --fetch --process
+    ```
+  </Accordion>
+
+  <Accordion title="Use Named Volumes">
+    For better management, use named Docker volumes:
+    ```bash
+    docker volume create datoso-config
+    docker volume create datoso-cache
+    
+    docker run \
+      -v datoso-config:/root/.config/datoso \
+      -v datoso-cache:/root/.datoso/dats \
+      datoso config
+    ```
+  </Accordion>
+
+  <Accordion title="Run as Non-Root User">
+    For better security, create a non-root user:
+    ```dockerfile
+    FROM python:3.12-slim
+    WORKDIR /datoso
+    
+    # Create datoso user
+    RUN useradd -m -u 1000 datoso
+    
+    # ... [install steps] ...
+    
+    USER datoso
+    ENTRYPOINT ["datoso"]
+    ```
+  </Accordion>
+
+  <Accordion title="Enable Logging">
+    Mount a log directory for persistent logs:
+    ```bash
+    docker run \
+      -v ~/.config/datoso:/root/.config/datoso \
+      -v ~/datoso-logs:/var/log/datoso \
+      -e LOG.LOGGING=true \
+      -e LOG.LOGFILE=/var/log/datoso/datoso.log \
+      datoso redump --fetch -v
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Automated Workflows
+
+### Scheduled Updates
+
+Use cron or a container scheduler to automate DAT updates:
+
+```bash
+# Crontab entry (daily at 2 AM)
+0 2 * * * docker run \
+  -v ~/.config/datoso:/root/.config/datoso \
+  -v ~/ROMVault/DatRoot:/datoso/dats \
+  datoso all --fetch --process
+```
+
+### CI/CD Integration
+
+Example GitHub Actions workflow:
+
+```yaml
+name: Update DATs
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+  workflow_dispatch:
+
+jobs:
+  update-dats:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Build Datoso
+        run: docker build -t datoso .
+      
+      - name: Fetch DATs
+        run: |
+          docker run \
+            -v ${{ github.workspace }}/dats:/datoso/dats \
+            datoso redump --fetch
+      
+      - name: Process DATs
+        run: |
+          docker run \
+            -v ${{ github.workspace }}/dats:/datoso/dats \
+            datoso redump --process
+```
+
+## Troubleshooting
+
+<Warning>
+  If you encounter permission issues with mounted volumes, ensure the container user has appropriate permissions or run with `--user` flag.
+</Warning>
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Permission Denied Errors">
+    **Solution**: Run with user permissions matching your host:
+    ```bash
+    docker run \
+      --user $(id -u):$(id -g) \
+      -v ~/.config/datoso:/root/.config/datoso \
+      datoso config
+    ```
+  </Accordion>
+
+  <Accordion title="Volume Not Persisting">
+    **Solution**: Verify volume mount paths and ensure directories exist on host:
+    ```bash
+    mkdir -p ~/.config/datoso
+    mkdir -p ~/ROMVault/DatRoot
+    ```
+  </Accordion>
+
+  <Accordion title="Network Issues">
+    **Solution**: Use host network mode for direct network access:
+    ```bash
+    docker run --network host datoso redump --fetch
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/getting-started/configuration">
+    Configure Datoso settings
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Debug issues and errors
+  </Card>
+</CardGroup>
