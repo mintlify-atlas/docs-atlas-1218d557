@@ -46,7 +46,8 @@
           "commands/config",
           "commands/doctor",
           "commands/import",
-          "commands/deduper"
+          "commands/deduper",
+          "commands/log"
         ]
       },
       {

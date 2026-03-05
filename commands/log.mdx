@@ -1,0 +1,184 @@
+---
+title: 'log'
+description: 'Display and manage Datoso log files'
+---
+
+## Overview
+
+The `log` command displays the contents of the Datoso log file. This is useful for debugging issues, reviewing operation history, and troubleshooting problems with seeds or DAT processing.
+
+## Usage
+
+```bash
+datoso log
+```
+
+## Description
+
+The log command outputs the entire contents of the Datoso log file to the console. The log file contains:
+
+- Fetch operations and download status
+- DAT processing steps and results
+- Error messages and stack traces
+- Configuration changes
+- Seed operations
+
+## Log File Location
+
+By default, the log file is located at:
+
+```
+~/.datoso/datoso.log
+```
+
+The location can be configured in your `datoso.config` file:
+
+```ini
+[LOG]
+LogFile = datoso.log
+```
+
+The log file path is relative to the `DatosoPath` configuration setting.
+
+## Enabling Logging
+
+Logging is not enabled by default. To enable logging, you must configure it in your `datoso.config` file:
+
+```ini
+[LOG]
+Logging = true
+LogLevel = INFO
+LogFile = datoso.log
+```
+
+### Log Levels
+
+Available log levels (from most to least verbose):
+
+- **DEBUG** - Detailed information for diagnosing problems
+- **INFO** - Confirmation that things are working as expected
+- **WARNING** - An indication that something unexpected happened
+- **ERROR** - A serious problem that prevented an operation from completing
+
+## Examples
+
+### View Current Log
+
+```bash
+datoso log
+```
+
+Output will display all logged operations, for example:
+
+```
+2024-03-05 10:23:15 INFO - Starting fetch for seed: redump
+2024-03-05 10:23:17 INFO - Downloading DAT: Sony - PlayStation 2
+2024-03-05 10:23:45 INFO - Successfully downloaded 234 DAT files
+2024-03-05 10:24:01 INFO - Processing DATs for redump
+2024-03-05 10:24:15 INFO - Processed 234 DAT files
+```
+
+### View Log with Less (Paginated)
+
+For large log files, pipe to `less` for easier navigation:
+
+```bash
+datoso log | less
+```
+
+### Search Log for Errors
+
+```bash
+datoso log | grep ERROR
+```
+
+### Save Log to File
+
+```bash
+datoso log > datoso-log-backup.txt
+```
+
+### View Last 50 Lines
+
+```bash
+datoso log | tail -50
+```
+
+## Verbose Mode
+
+For real-time verbose output during operations, use the `--verbose` flag with any command:
+
+```bash
+datoso redump --fetch --verbose
+```
+
+This displays detailed progress information to the console during execution, which is separate from the log file.
+
+## Troubleshooting
+
+### Log File Not Found
+
+If you see an error that the log file doesn't exist:
+
+```
+cat: /home/user/.datoso/datoso.log: No such file or directory
+```
+
+**Cause**: Logging is not enabled or no operations have been logged yet.
+
+**Solution**: 
+
+1. Enable logging in your configuration:
+
+```bash
+datoso config --set LOG.Logging true
+```
+
+2. Run a command to generate log entries:
+
+```bash
+datoso redump --fetch
+```
+
+### Empty Log File
+
+If the log file exists but is empty:
+
+**Cause**: The log level may be set too high, or no operations have generated log entries at that level.
+
+**Solution**: Lower the log level to INFO or DEBUG:
+
+```bash
+datoso config --set LOG.LogLevel INFO
+```
+
+### Log File Too Large
+
+For very large log files that are difficult to view:
+
+**Solution 1**: View only recent entries
+
+```bash
+datoso log | tail -100
+```
+
+**Solution 2**: Clear the log file
+
+```bash
+rm ~/.datoso/datoso.log
+```
+
+**Solution 3**: Rotate log files manually
+
+```bash
+mv ~/.datoso/datoso.log ~/.datoso/datoso.log.old
+```
+
+## Related Commands
+
+- [config](/commands/config) - Configure logging settings
+- [doctor](/commands/doctor) - Diagnose seed and configuration issues
+
+## Configuration Reference
+
+See [Configuration File](/configuration/config-file) for complete LOG section options.
